@@ -20,7 +20,7 @@ features:
 
 
       *The Twist-n-Grip peg works like a regular screw which is why we nickname it an EarthScrew! It is simply screwed in and out of the earth giving you a good secure anchorage point. Use it to hold down tents, bivouacs, shade coverings, awnings, canopies or gazebos. Tie down the trampoline, furniture, pet cage and so many other items. In the garden, use it for young shrub tie downs, secure growing tunnels or pinning weed mat and soil erosion materials it has so many uses. Removal is as easy as insertion, just unscrew it, no more pulling and straining required, simple and easy.*
-    image: /f1.webp
+    image: /images/feature2.jpg
     imageAlt: Camping scene with tent and fire
     reverse: false
   - title: Designed in New Zealand
