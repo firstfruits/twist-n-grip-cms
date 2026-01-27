@@ -1,0 +1,54 @@
+---
+import { marked } from "marked";
+
+interface Feature {
+  title: string;
+  content: string;
+  image?: string;
+  imageAlt?: string;
+  reverse: boolean;
+}
+
+interface Props {
+  features: Feature[];
+}
+
+const { features } = Astro.props;
+---
+
+<section class="pb-20 bg-white">
+  {
+    features.map((feature) => (
+      <div class={` ${feature.reverse ? "" : "bg-[#F9FAFC]"}`}>
+        <div
+          class={`flex flex-col max-w-[1200px] mx-auto px-5 md:flex-row items-center py-14 md:py-16 lg:gap-12 md:gap-8 gap-4 ${feature.reverse ? "md:flex-row-reverse" : ""}`}
+        >
+          {/* Image Side */}
+          {feature.image && (
+            <div class="w-full md:w-1/2">
+              <div class="rounded-xl overflow-hidden">
+                <img
+                  src={feature.image}
+                  alt={feature.imageAlt}
+                  class="w-full h-auto object-cover hover:scale-[1.02] transition-transform duration-700 ease-in-out"
+                  loading="lazy"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Text Side */}
+          <div class={`w-full ${feature.image ? "md:w-1/2" : "max-w-full"}`}>
+            <h2 class="text-[28px] md:text-[32px] lg:text-[32px] font-bold text-[#1a202c] mb-2.5 leading-tigher tracking-tight">
+              {feature.title}
+            </h2>
+            <div
+              class=" text-gray-600 text-[16px] lg:text-sm leading-[24px] text-justify md:text-left font-normal prose max-w-none"
+              set:html={marked.parse(feature.content)}
+            />
+          </div>
+        </div>
+      </div>
+    ))
+  }
+</section>

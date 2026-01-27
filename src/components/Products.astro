@@ -1,0 +1,171 @@
+---
+interface Product {
+  id: number;
+  title: string;
+  description: string;
+  price: string;
+  image: string;
+}
+
+interface Props {
+  products: Product[];
+}
+
+const { products } = Astro.props;
+---
+
+<section class="pb-16 bg-white" id="products">
+  <div class="max-w-[1240px] mx-auto px-4 md:px-8">
+    <div class="text-center mb-12">
+      <h2 class="text-4xl font-bold text-[#1a202c] mb-3">Our Products</h2>
+      <p class="text-gray-500 text-sm font-medium">
+        Free shipping for orders over $45
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {
+        products.map((product) => (
+          <div
+            class="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] transition-shadow duration-300 overflow-hidden flex flex-col border border-gray-100 product-card"
+            data-base-price={product.price}
+            data-id={product.id}
+            data-title={product.title}
+            data-description={product.description}
+            data-image={product.image}
+          >
+            {/* Image Container */}
+            <div class="aspect-square w-full flex items-center justify-center bg-[#f2f2f2]">
+              <img
+                src={product.image}
+                alt={product.title}
+                class="max-w-full max-h-full w-full object-cover drop-shadow-sm"
+                loading="lazy"
+              />
+            </div>
+
+            {/* Content */}
+            <div class="grow flex flex-col p-5">
+              <h3 class="text-[15px] font-bold text-[#1a202c] mb-3 leading-snug line-clamp-2">
+                {product.title}
+              </h3>
+              <p class="text-xs text-gray-500 font-light leading-relaxed line-clamp-2">
+                {product.description}
+              </p>
+
+              {/* Price and Quantity Row */}
+              <div class="flex items-center justify-between mb-3 mt-2">
+                <span class="text-xl font-bold text-[#1a202c] price-display">
+                  ${product.price}
+                </span>
+
+                <div class="flex items-center border border-gray-200 rounded-md">
+                  <button
+                    class="px-3 py-1 text-gray-400 hover:text-gray-600 transition-colors decrease-btn"
+                    aria-label="Decrease quantity"
+                  >
+                    &minus;
+                  </button>
+                  <input
+                    type="text"
+                    value="1"
+                    class="w-8 text-center text-sm text-[#1a202c] focus:outline-none quantity-input"
+                    readonly
+                  />
+                  <button
+                    class="px-3 py-1 text-gray-400 hover:text-gray-600 transition-colors increase-btn"
+                    aria-label="Increase quantity"
+                  >
+                    &#43;
+                  </button>
+                </div>
+              </div>
+
+              {/* Buy Button */}
+              <button class="w-full bg-[#C83B2A] hover:bg-[#b03425] text-white font-medium py-2.5 rounded-md flex items-center justify-center gap-2 transition-colors text-sm shadow-sm group buy-btn">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="2"
+                  stroke="currentColor"
+                  class="w-4 h-4"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 0 0-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 0 0-16.536-1.84M7.5 14.25 5.106 5.272M6 20.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm12.75 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z"
+                  />
+                </svg>
+                Buy Now
+              </button>
+            </div>
+          </div>
+        ))
+      }
+    </div>
+  </div>
+</section>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const productCards = document.querySelectorAll(".product-card");
+
+    productCards.forEach((card) => {
+      const basePrice = parseFloat(card.getAttribute("data-base-price")!);
+      const id = card.getAttribute("data-id");
+      const title = card.getAttribute("data-title");
+      const description = card.getAttribute("data-description");
+      const image = card.getAttribute("data-image");
+
+      const decreaseBtn = card.querySelector(
+        ".decrease-btn",
+      ) as HTMLButtonElement;
+      const increaseBtn = card.querySelector(
+        ".increase-btn",
+      ) as HTMLButtonElement;
+      const quantityInput = card.querySelector(
+        ".quantity-input",
+      ) as HTMLInputElement;
+      const priceDisplay = card.querySelector(
+        ".price-display",
+      ) as HTMLSpanElement;
+      const buyBtn = card.querySelector(".buy-btn") as HTMLButtonElement;
+
+      let quantity = 1;
+
+      const updatePrice = () => {
+        const newPrice = (basePrice * quantity).toFixed(2);
+        priceDisplay.textContent = `$${newPrice}`;
+      };
+
+      decreaseBtn.addEventListener("click", () => {
+        if (quantity > 1) {
+          quantity--;
+          quantityInput.value = quantity.toString();
+          updatePrice();
+        }
+      });
+
+      increaseBtn.addEventListener("click", () => {
+        quantity++;
+        quantityInput.value = quantity.toString();
+        updatePrice();
+      });
+
+      buyBtn.addEventListener("click", () => {
+        const productData = {
+          id,
+          title,
+          description,
+          image,
+          price: basePrice,
+          quantity: quantity,
+        };
+
+        localStorage.setItem("checkout_product", JSON.stringify(productData));
+        window.location.href = "/checkout";
+      });
+    });
+  });
+</script>

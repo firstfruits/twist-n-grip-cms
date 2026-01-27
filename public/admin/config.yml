@@ -1,0 +1,167 @@
+backend:
+  name: git-gateway
+  branch: main # Branch to update (optional; defaults to master)
+
+local_backend: true
+
+media_folder: "public/images" # Location where files will be stored in the repo
+public_folder: "/images"
+
+collections:
+  # - name: "blog" # Used in routes, e.g., /admin/collections/blog
+  #   label: "Blog" # Used in the UI
+  #   folder: "src/content/blog" # The path to the folder where the documents are stored
+  #   create: true # Allow users to create new documents in this collection
+  #   fields: # The fields for each document, usually in frontmatter
+  #     - { label: "Layout", name: "layout", widget: "hidden", default: "blog" }
+  #     - { label: "Title", name: "title", widget: "string" }
+  #     - { label: "Publish Date", name: "date", widget: "datetime" }
+  #     - { label: "Featured Image", name: "thumbnail", widget: "image" }
+  #     - { label: "Rating (scale of 1-5)", name: "rating", widget: "number" }
+  #     - { label: "Body", name: "body", widget: "markdown" }
+
+  - name: "pages"
+    label: "Pages"
+    files:
+      - name: "home"
+        label: "Home Page"
+        file: "src/content/pages/home.md"
+        fields:
+          - label: "Hero Section"
+            name: "hero"
+            widget: "object"
+            fields:
+              - {
+                  label: "Title",
+                  name: "title",
+                  widget: "string",
+                  required: false,
+                }
+              - {
+                  label: "Subtitle",
+                  name: "subtitle",
+                  widget: "string",
+                  required: false,
+                }
+              - {
+                  label: "Description",
+                  name: "description",
+                  widget: "text",
+                  required: false,
+                }
+              - {
+                  label: "Hero Image",
+                  name: "image",
+                  widget: "image",
+                  required: false,
+                }
+              - {
+                  label: "Primary Button Text",
+                  name: "primaryBtnText",
+                  widget: "string",
+                  required: false,
+                }
+              - {
+                  label: "Secondary Button Text",
+                  name: "secondaryBtnText",
+                  widget: "string",
+                  required: false,
+                }
+              - {
+                  label: "Phone Number",
+                  name: "phoneNumber",
+                  widget: "string",
+                  required: false,
+                }
+          - label: "Features Section"
+            name: "features"
+            widget: "list"
+            fields:
+              - {
+                  label: "Title",
+                  name: "title",
+                  widget: "string",
+                  required: false,
+                }
+              - {
+                  label: "Content",
+                  name: "content",
+                  widget: "markdown",
+                  required: false,
+                }
+              - {
+                  label: "Image",
+                  name: "image",
+                  widget: "image",
+                  required: false,
+                }
+              - {
+                  label: "Image Alt Text",
+                  name: "imageAlt",
+                  widget: "string",
+                  required: false,
+                }
+              - {
+                  label: "Reverse Layout",
+                  name: "reverse",
+                  widget: "boolean",
+                  default: false,
+                }
+          - label: "Products Section"
+            name: "products"
+            widget: "list"
+            fields:
+              - { label: "ID", name: "id", widget: "number", required: false }
+              - {
+                  label: "Title",
+                  name: "title",
+                  widget: "string",
+                  required: false,
+                }
+              - {
+                  label: "Description",
+                  name: "description",
+                  widget: "text",
+                  required: false,
+                }
+              - {
+                  label: "Price",
+                  name: "price",
+                  widget: "string",
+                  required: false,
+                }
+              - {
+                  label: "Image",
+                  name: "image",
+                  widget: "image",
+                  required: false,
+                }
+
+  - name: "settings"
+    label: "Settings"
+    delete: false
+    files:
+      - name: "footer"
+        label: "Footer"
+        file: "src/content/settings/footer.yml"
+        fields:
+          - label: "Brand"
+            name: "brand"
+            widget: "object"
+            fields:
+              - { label: "Title", name: "title", widget: "string" }
+              - { label: "Description", name: "description", widget: "text" }
+          - label: "Contact"
+            name: "contact"
+            widget: "object"
+            fields:
+              - { label: "Phone", name: "phone", widget: "string" }
+              - { label: "Email", name: "email", widget: "string" }
+          - label: "Information"
+            name: "information"
+            widget: "list"
+            fields:
+              - { label: "Text", name: "text", widget: "string" }
+          - label: "Copyright"
+            name: "copyright"
+            widget: "string"

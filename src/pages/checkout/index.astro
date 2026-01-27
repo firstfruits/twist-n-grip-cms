@@ -1,0 +1,747 @@
+---
+import Layout from "../../layouts/Layout.astro";
+
+const product = {
+  name: "Twist-n-Grip Pro",
+  image: "https://placehold.co/400x400/1e1b4b/white?text=Twist-n-Grip",
+  description:
+    "Ergonomic compression grip for maximum performance and comfort.",
+  price: 29.99,
+};
+
+const quantity = 1;
+const totalPrice = product.price * quantity;
+---
+
+<Layout>
+  <script
+    src="https://www.paypal.com/sdk/js?client-id=AZGr8Sv1vthle1HyaWTTjkEfiVh6I6nfyQWi2uiVYUhPycOJLj_zRUFxrvcMqiY5pQ6eh9oOxsAjvts3&currency=USD"
+    is:inline></script>
+
+  <style>
+    /* Toast Styles */
+    #toast {
+      visibility: hidden;
+      min-width: 250px;
+      margin-left: -125px;
+      background-color: #333;
+      color: #fff;
+      text-align: center;
+      border-radius: 8px;
+      padding: 16px;
+      position: fixed;
+      z-index: 1000;
+      left: 50%;
+      bottom: 30px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      transition:
+        visibility 0s,
+        opacity 0.5s linear;
+      opacity: 0;
+    }
+
+    #toast.show {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    /* Overlay styles for disabled buttons */
+    #paypal-button-container.disabled {
+      pointer-events: none;
+      opacity: 0.5;
+      filter: grayscale(1);
+    }
+  </style>
+
+  <div id="toast">Payment Successful! Order Placed.</div>
+  <div class="min-h-screen bg-gray-50">
+    <!-- Header -->
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-10">
+      <div class="max-w-7xl mx-auto px-4 py-4">
+        <a
+          href="/#products"
+          class="inline-flex items-center gap-2 text-gray-600 hover:text-[#d4183d] transition-colors"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="w-5 h-5"
+            ><path d="m12 19-7-7 7-7"></path><path d="M19 12H5"></path></svg
+          >
+          <span>Back to Products</span>
+        </a>
+      </div>
+    </header>
+
+    <div class="max-w-7xl mx-auto px-4 py-12">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+        <!-- Left Column - Product Summary -->
+        <div>
+          <h1 class="text-3xl mb-8 font-bold text-gray-900">Checkout</h1>
+
+          <!-- Product Card -->
+          <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+            <h2 class="text-xl mb-6 font-semibold">Order Summary</h2>
+
+            <div class="flex gap-6 mb-6">
+              <div
+                class="w-32 h-32 shrink-0 bg-gray-100 rounded-lg flex items-center justify-center p-4"
+              >
+                <img
+                  src={product.image}
+                  alt={product.name}
+                  class="w-full h-full object-contain"
+                />
+              </div>
+
+              <div class="flex-1">
+                <h3 class="text-lg mb-2 font-medium">{product.name}</h3>
+                <p class="text-gray-600 text-sm mb-4">
+                  {product.description}
+                </p>
+                <p class="text-2xl font-bold">${product.price.toFixed(2)}</p>
+              </div>
+            </div>
+
+            <!-- Quantity Controls -->
+            <div class="border-t border-gray-200 pt-6">
+              <div class="flex items-center justify-between mb-6">
+                <label class="text-base font-medium">Quantity</label>
+                <div class="flex items-center gap-3">
+                  <button
+                    id="decrease-qty"
+                    class="w-10 h-10 rounded-[6px] border-2 border-gray-300 hover:border-[#d4183d] hover:text-[#d4183d] transition-colors flex items-center justify-center cursor-pointer"
+                    aria-label="Decrease quantity"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      class="w-5 h-5"><path d="M5 12h14"></path></svg
+                    >
+                  </button>
+                  <span
+                    id="quantity-display"
+                    class="text-xl w-12 text-center font-semibold">1</span
+                  >
+                  <button
+                    id="increase-qty"
+                    class="w-10 h-10 rounded-[6px] border-2 border-gray-300 hover:border-[#d4183d] hover:text-[#d4183d] transition-colors flex items-center justify-center cursor-pointer"
+                    aria-label="Increase quantity"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      class="w-5 h-5"
+                      ><path d="M5 12h14"></path><path d="M12 5v14"></path></svg
+                    >
+                  </button>
+                </div>
+              </div>
+
+              <!-- Total -->
+              <div
+                class="flex items-center justify-between text-2xl pt-6 border-t border-gray-200"
+              >
+                <span class="font-medium">Total</span>
+                <span id="total-price-display" class="text-[#d4183d] font-bold">
+                  $0.00
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column - Checkout Form -->
+        <div>
+          <div class="bg-white rounded-lg shadow-sm p-6">
+            <h2 class="text-xl mb-6 font-semibold">Shipping Information</h2>
+
+            <form
+              class="space-y-5"
+              id="checkout-form"
+              name="checkout"
+              method="POST"
+              data-netlify="true"
+              netlify-honeypot="bot-field"
+            >
+              <input type="hidden" name="form-name" value="checkout" />
+              <input type="hidden" name="bot-field" />
+              <input
+                type="hidden"
+                name="paypal-transaction-id"
+                id="paypal-tid"
+              />
+              <input
+                type="hidden"
+                name="paypal-status"
+                id="paypal-status-input"
+              />
+              <input
+                type="hidden"
+                name="product-name"
+                id="hidden-product-name"
+              />
+              <input type="hidden" name="product-qty" id="hidden-product-qty" />
+              <input type="hidden" name="total-price" id="hidden-total-price" />
+
+              <div>
+                <label
+                  for="fullName"
+                  class="block text-sm mb-2 text-gray-700 font-medium"
+                >
+                  Full Name *
+                </label>
+                <input
+                  type="text"
+                  id="fullName"
+                  name="fullName"
+                  required
+                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d4183d] focus:border-transparent transition-all"
+                  placeholder="John Doe"
+                />
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div>
+                  <label
+                    for="email"
+                    class="block text-sm mb-2 text-gray-700 font-medium"
+                  >
+                    Email *
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    required
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d4183d] focus:border-transparent transition-all"
+                    placeholder="john@example.com"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    for="phone"
+                    class="block text-sm mb-2 text-gray-700 font-medium"
+                  >
+                    Phone *
+                  </label>
+                  <input
+                    type="tel"
+                    id="phone"
+                    name="phone"
+                    required
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d4183d] focus:border-transparent transition-all"
+                    placeholder="+1 (555) 000-0000"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label
+                  for="address"
+                  class="block text-sm mb-2 text-gray-700 font-medium"
+                >
+                  Street Address *
+                </label>
+                <textarea
+                  id="address"
+                  name="address"
+                  required
+                  rows="3"
+                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d4183d] focus:border-transparent resize-none transition-all"
+                  placeholder="123 Main Street, Apartment 4B"></textarea>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <div>
+                  <label
+                    for="city"
+                    class="block text-sm mb-2 text-gray-700 font-medium"
+                  >
+                    City *
+                  </label>
+                  <input
+                    type="text"
+                    id="city"
+                    name="city"
+                    required
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d4183d] focus:border-transparent transition-all"
+                    placeholder="Auckland"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    for="postalCode"
+                    class="block text-sm mb-2 text-gray-700 font-medium"
+                  >
+                    Postal Code *
+                  </label>
+                  <input
+                    type="text"
+                    id="postalCode"
+                    name="postalCode"
+                    required
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d4183d] focus:border-transparent transition-all"
+                    placeholder="1010"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    for="country"
+                    class="block text-sm mb-2 text-gray-700 font-medium"
+                  >
+                    Country *
+                  </label>
+                  <input
+                    type="text"
+                    id="country"
+                    name="country"
+                    required
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d4183d] focus:border-transparent transition-all"
+                    placeholder="New Zealand"
+                  />
+                </div>
+              </div>
+
+              <!-- PayPal Button -->
+              <div class="pt-6">
+                <div id="paypal-button-container"></div>
+                <p class="text-center text-sm text-gray-500 mt-3">
+                  Secure payment processing via PayPal
+                </p>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<script is:inline>
+  const quantityDisplay = document.getElementById("quantity-display");
+  const totalPriceDisplay = document.getElementById("total-price-display");
+  const decreaseBtn = document.getElementById("decrease-qty");
+  const increaseBtn = document.getElementById("increase-qty");
+  const checkoutForm = document.getElementById("checkout-form");
+
+  // Selection elements
+  const productNameEl = document.querySelector("h3.text-lg.font-medium");
+  const productDescEl = document.querySelector("p.text-gray-600.text-sm");
+  const productPriceEl = document.querySelector("p.text-2xl.font-bold");
+  const productImageEl = document.querySelector("img.object-contain");
+
+  let productData = null;
+  let currentQuantity = 1;
+
+  function loadProductData() {
+    const storedData = localStorage.getItem("checkout_product");
+    if (storedData) {
+      productData = JSON.parse(storedData);
+      currentQuantity = productData.quantity || 1;
+
+      // Update UI with stored data
+      if (productNameEl) productNameEl.textContent = productData.title;
+      if (productDescEl) productDescEl.textContent = productData.description;
+      if (productPriceEl)
+        productPriceEl.textContent = `$${parseFloat(productData.price).toFixed(2)}`;
+      if (productImageEl) {
+        productImageEl.src = productData.image;
+        productImageEl.alt = productData.title;
+      }
+
+      updateDisplay();
+    } else {
+      console.warn("No product data found in localStorage");
+    }
+  }
+
+  function updateDisplay() {
+    if (!productData) return;
+
+    if (quantityDisplay) quantityDisplay.textContent = currentQuantity;
+    if (totalPriceDisplay) {
+      const price = parseFloat(productData.price);
+      const total = (currentQuantity * price).toFixed(2);
+      totalPriceDisplay.textContent = `$${total}`;
+
+      // Update hidden form fields
+      const hiddenName = document.getElementById("hidden-product-name");
+      const hiddenQty = document.getElementById("hidden-product-qty");
+      const hiddenTotal = document.getElementById("hidden-total-price");
+      if (hiddenName) hiddenName.value = productData.title;
+      if (hiddenQty) hiddenQty.value = currentQuantity;
+      if (hiddenTotal) hiddenTotal.value = total;
+    }
+
+    // Sync back to localStorage
+    productData.quantity = currentQuantity;
+    localStorage.setItem("checkout_product", JSON.stringify(productData));
+  }
+
+  // Form Validation Logic
+  function checkFormValidity() {
+    const isValid = checkoutForm.checkValidity();
+    const paypalContainer = document.getElementById("paypal-button-container");
+    if (paypalContainer) {
+      if (isValid) {
+        paypalContainer.classList.remove("disabled");
+      } else {
+        paypalContainer.classList.add("disabled");
+      }
+    }
+    return isValid;
+  }
+
+  checkoutForm?.addEventListener("input", checkFormValidity);
+
+  function showToast() {
+    const toast = document.getElementById("toast");
+    if (toast) {
+      toast.classList.add("show");
+      setTimeout(() => {
+        toast.classList.remove("show");
+      }, 3000);
+    }
+  }
+
+  async function submitToNetlify(orderData) {
+    const formData = new FormData(checkoutForm);
+    // Ensure the hidden fields are synced (they should be, but let's be safe)
+    formData.set("paypal-transaction-id", orderData.id);
+    formData.set("paypal-status", orderData.status);
+    formData.set("form-name", "checkout");
+
+    try {
+      const response = await fetch(window.location.pathname, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams(formData).toString(),
+      });
+
+      if (response.ok) {
+        console.log("Form successfully submitted to Netlify");
+      } else {
+        console.error(
+          "Netlify submission failed with status:",
+          response.status,
+        );
+      }
+    } catch (error) {
+      console.error("Netlify submission error:", error);
+    }
+  }
+
+  decreaseBtn?.addEventListener("click", (e) => {
+    e.preventDefault();
+    if (currentQuantity > 1) {
+      currentQuantity--;
+      updateDisplay();
+    }
+  });
+
+  increaseBtn?.addEventListener("click", (e) => {
+    e.preventDefault();
+    currentQuantity++;
+    updateDisplay();
+  });
+
+  checkoutForm?.addEventListener("submit", (e) => {
+    e.preventDefault();
+  });
+
+  function initPayPal() {
+    if (!window.paypal) {
+      console.error("PayPal SDK not loaded");
+      return;
+    }
+
+    const paypalContainer = document.getElementById("paypal-button-container");
+    if (!paypalContainer) return;
+
+    // Clear previous button if any
+    paypalContainer.innerHTML = "";
+
+    window.paypal
+      .Buttons({
+        onClick: function (data, actions) {
+          if (!checkFormValidity()) {
+            alert("Please fill in all required shipping information first.");
+            return actions.reject();
+          }
+          return actions.resolve();
+        },
+        createOrder: function (data, actions) {
+          if (!productData) {
+            alert("Please select a product first");
+            return;
+          }
+
+          const total = (
+            currentQuantity * parseFloat(productData.price)
+          ).toFixed(2);
+
+          return actions.order.create({
+            purchase_units: [
+              {
+                amount: {
+                  value: total,
+                  currency_code: "USD",
+                },
+                description: `${productData.title} (Qty: ${currentQuantity})`,
+              },
+            ],
+          });
+        },
+        onApprove: function (data, actions) {
+          return actions.order.capture().then(async function (orderData) {
+            console.log("Capture result", orderData);
+
+            // Submit to Netlify
+            await submitToNetlify(orderData);
+
+            // Show Toast
+            showToast();
+
+            // Redirect to home after delay
+            setTimeout(() => {
+              window.location.href = "/";
+            }, 2000);
+          });
+        },
+        onError: function (err) {
+          console.error("PayPal Error:", err);
+          alert("An error occurred with PayPal. Please try again.");
+        },
+      })
+      .render("#paypal-button-container");
+
+    // Initial check
+    checkFormValidity();
+  }
+
+  // Initial load
+  loadProductData();
+
+  // Initialize PayPal when SDK is ready
+  if (window.paypal) {
+    initPayPal();
+  } else {
+    document.addEventListener("DOMContentLoaded", initPayPal);
+    setTimeout(() => {
+      if (window.paypal) initPayPal();
+    }, 1000);
+  }
+</script>
+
+<!-- Business
+Email: sb-flhwz49004060@business.example.com
+Password: 2xG*%$d(
+Client ID: AZGr8Sv1vthle1HyaWTTjkEfiVh6I6nfyQWi2uiVYUhPycOJLj_zRUFxrvcMqiY5pQ6eh9oOxsAjvts3
+Client Secret: EGdqFnpup8npcO87G0y_vh5ObTpGQg-dpjrHhpJbuBAGUE_6yJ49-cZ82_knF3-p6arbK3-QAd8Tvs_c
+
+Personal:
+Email: sb-gv07y48971586@personal.example.com
+Password: -q_;Tn1#
+
+API & Credentials
+Client ID: AZGr8Sv1vthle1HyaWTTjkEfiVh6I6nfyQWi2uiVYUhPycOJLj_zRUFxrvcMqiY5pQ6eh9oOxsAjvts3
+Client Secret: EGdqFnpup8npcO87G0y_vh5ObTpGQg-dpjrHhpJbuBAGUE_6yJ49-cZ82_knF3-p6arbK3-QAd8Tvs_c -->
+
+<!-- 
+Response:
+Capture result 
+Object { id: "10F76244FN9341034", intent: "CAPTURE", status: "COMPLETED", purchase_units: (1) […], payer: {…}, create_time: "2026-01-23T22:00:07Z", update_time: "2026-01-23T22:00:54Z", links: (1) […] }
+​
+create_time: "2026-01-23T22:00:07Z"
+​
+id: "10F76244FN9341034"
+​
+intent: "CAPTURE"
+​
+links: Array [ {…} ]
+​
+payer: Object { name: {…}, email_address: "sb-gv07y48971586@personal.example.com", payer_id: "EE4ZHR5WQ7YTJ", … }
+​
+purchase_units: Array [ {…} ]
+​
+status: "COMPLETED"
+​
+update_time: "2026-01-23T22:00:54Z"
+​
+<prototype>: Object { … }
+ {
+  "id": "10F76244FN9341034",
+  "intent": "CAPTURE",
+  "status": "COMPLETED",
+  "purchase_units": [
+    {
+      "reference_id": "default",
+      "amount": {
+        "currency_code": "USD",
+        "value": "28.00"
+      },
+      "payee": {
+        "email_address": "sb-flhwz49004060@business.example.com",
+        "merchant_id": "R2DRHTMNW87CY"
+      },
+      "description": "RD Fee - $4.00 Add On Fee for Rural Deliveries (Qty: 7)",
+      "shipping": {
+        "name": {
+          "full_name": "John Doe"
+        },
+        "address": {
+          "address_line_1": "2211 N First St",
+          "admin_area_2": "San Jose",
+          "admin_area_1": "CA",
+          "postal_code": "95131",
+          "country_code": "US"
+        }
+      },
+      "payments": {
+        "captures": [
+          {
+            "id": "3GH98806SU5533701",
+            "status": "COMPLETED",
+            "amount": {
+              "currency_code": "USD",
+              "value": "28.00"
+            },
+            "final_capture": true,
+            "seller_protection": {
+              "status": "ELIGIBLE",
+              "dispute_categories": [
+                "ITEM_NOT_RECEIVED",
+                "UNAUTHORIZED_TRANSACTION"
+              ]
+            },
+            "create_time": "2026-01-23T22:00:54Z",
+            "update_time": "2026-01-23T22:00:54Z"
+          }
+        ]
+      }
+    }
+  ],
+  "payer": {
+    "name": {
+      "given_name": "John",
+      "surname": "Doe"
+    },
+    "email_address": "sb-gv07y48971586@personal.example.com",
+    "payer_id": "EE4ZHR5WQ7YTJ",
+    "address": {
+      "country_code": "US"
+    }
+  },
+  "create_time": "2026-01-23T22:00:07Z",
+  "update_time": "2026-01-23T22:00:54Z",
+  "links": [
+    {
+      "href": "https://api.sandbox.paypal.com/v2/checkout/orders/10F76244FN9341034",
+      "rel": "self",
+      "method": "GET"
+    }
+  ]
+} checkout:1397:21
+
+
+
+Normal:
+{
+  "id": "10F76244FN9341034",
+  "intent": "CAPTURE",
+  "status": "COMPLETED",
+  "purchase_units": [
+    {
+      "reference_id": "default",
+      "amount": {
+        "currency_code": "USD",
+        "value": "28.00"
+      },
+      "payee": {
+        "email_address": "sb-flhwz49004060@business.example.com",
+        "merchant_id": "R2DRHTMNW87CY"
+      },
+      "description": "RD Fee - $4.00 Add On Fee for Rural Deliveries (Qty: 7)",
+      "shipping": {
+        "name": {
+          "full_name": "John Doe"
+        },
+        "address": {
+          "address_line_1": "2211 N First St",
+          "admin_area_2": "San Jose",
+          "admin_area_1": "CA",
+          "postal_code": "95131",
+          "country_code": "US"
+        }
+      },
+      "payments": {
+        "captures": [
+          {
+            "id": "3GH98806SU5533701",
+            "status": "COMPLETED",
+            "amount": {
+              "currency_code": "USD",
+              "value": "28.00"
+            },
+            "final_capture": true,
+            "seller_protection": {
+              "status": "ELIGIBLE",
+              "dispute_categories": [
+                "ITEM_NOT_RECEIVED",
+                "UNAUTHORIZED_TRANSACTION"
+              ]
+            },
+            "create_time": "2026-01-23T22:00:54Z",
+            "update_time": "2026-01-23T22:00:54Z"
+          }
+        ]
+      }
+    }
+  ],
+  "payer": {
+    "name": {
+      "given_name": "John",
+      "surname": "Doe"
+    },
+    "email_address": "sb-gv07y48971586@personal.example.com",
+    "payer_id": "EE4ZHR5WQ7YTJ",
+    "address": {
+      "country_code": "US"
+    }
+  },
+  "create_time": "2026-01-23T22:00:07Z",
+  "update_time": "2026-01-23T22:00:54Z",
+  "links": [
+    {
+      "href": "https://api.sandbox.paypal.com/v2/checkout/orders/10F76244FN9341034",
+      "rel": "self",
+      "method": "GET"
+    }
+  ]
+}
+ -->
