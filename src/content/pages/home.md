@@ -34,7 +34,7 @@ features:
 
 
       These heavy duty screw in pegs are designed to be easy to use, screw in and has less ground disturbance on withdrawal. Wind resistance is 35kg making it a stronger anchoring peg than the equivalent 'knock in' peg. Tote bags, also made in NZ are available, each tote bag can hold up to six screw in pegs and a NZ made hand tool to make a tent peg set. Tote bags work with a drawstring and are lightweight unlike leather tote bags.
-    image: src/assets/uploads/f2.webp
+    image: /images/feature1.jpg
     imageAlt: Forest scene with sunlight
     reverse: true
   - title: Manufactured in New Zealand
