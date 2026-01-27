@@ -3,7 +3,7 @@ hero:
   title: Twist-n-Grip Peg
   subtitle: A Tough Ground Anchoring Earth Screw
   description: Easy to screw in and holds greater loads than similar sized pegs!
-  image: /images/hero.webp
+  image: /images/designed-in-new-zealand.webp
   primaryBtnText: BUY PEGS
   secondaryBtnText: CALL ME
   phoneNumber: 027 276 2028
