@@ -71,6 +71,6 @@ products:
     price: "4.00"
     image: /Rural-Delivery-Product-Image.webp
 contact:
-  title: Get in Touchhh
+  title: Get in Touch
   description: We'd love to hear from you. Send us a message below.
 ---
