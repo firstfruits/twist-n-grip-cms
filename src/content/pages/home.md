@@ -61,8 +61,7 @@ products:
     image: /Hand-Tool-Product-Image.webp
   - id: 3
     title: One Tote Bag, holds six tough screw in tent Pegs and a Hand Tool
-    description:
-      Lightweight drawstring tote bag made in NZ, holds up to 6 pegs and
+    description: Lightweight drawstring tote bag made in NZ, holds up to 6 pegs and
       hand tool
     price: "3.55"
     image: /Tote-Bag-Product-Image.webp
@@ -72,6 +71,6 @@ products:
     price: "4.00"
     image: /Rural-Delivery-Product-Image.webp
 contact:
-  title: Get in Touch
+  title: Get in Touchhh
   description: We'd love to hear from you. Send us a message below.
 ---
