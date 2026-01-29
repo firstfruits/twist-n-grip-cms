@@ -2,6 +2,7 @@
 import Hero from "../components/Hero.astro";
 import Features from "../components/Features.astro";
 import Products from "../components/Products.astro";
+import Contact from "../components/Contact.astro";
 import Layout from "../layouts/Layout.astro";
 import { getEntry } from "astro:content";
 
@@ -11,11 +12,12 @@ if (!homePage) {
   throw new Error("Could not find home page content");
 }
 
-const { hero, features, products } = homePage.data;
+const { hero, features, products, contact } = homePage.data;
 ---
 
 <Layout>
   <Hero hero={hero} />
   <Features features={features} />
   <Products products={products} />
+  <Contact title={contact?.title} description={contact?.description} />
 </Layout>

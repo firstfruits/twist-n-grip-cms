@@ -10,7 +10,6 @@ backend:
   auth_token_endpoint: /sites/7ee15437-4cad-422b-80ad-89759fa0cf08/token
   gateway_url: https://gateway.decapbridge.com
 
-
   # See who did what (optional)
   commit_messages:
     create: Create {{collection}} “{{slug}}” - {{author-name}} <{{author-login}}> via DecapBridge
@@ -29,7 +28,6 @@ auth:
 
 # Better Decap + Bridge logo (optional)
 logo_url: https://decapbridge.com/decapcms-with-bridge.svg
-
 
 # Add site links in Decap CMS (optional)
 site_url: https://twist-n-grip-cms.netlify.app
@@ -164,6 +162,22 @@ collections:
                   label: "Image",
                   name: "image",
                   widget: "image",
+                  required: false,
+                }
+          - label: "Contact Section"
+            name: "contact"
+            widget: "object"
+            fields:
+              - {
+                  label: "Title",
+                  name: "title",
+                  widget: "string",
+                  required: false,
+                }
+              - {
+                  label: "Description",
+                  name: "description",
+                  widget: "text",
                   required: false,
                 }
 

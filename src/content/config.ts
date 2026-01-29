@@ -40,6 +40,12 @@ const pagesCollection = defineCollection({
         image: z.string(),
       }),
     ),
+    contact: z
+      .object({
+        title: z.string().optional(),
+        description: z.string().optional(),
+      })
+      .optional(),
   }),
 });
 
