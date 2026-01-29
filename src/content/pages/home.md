@@ -48,6 +48,7 @@ features:
 
       Size: Overall length 175mm; the tapered shaft length is 154mm x 20mm tapering to 10mm. Head diameter: 45mm.
     reverse: false
+    image: /images/designed-in-new-zealand.webp
 products:
   - id: 1
     title: One Twist n Grip Tough Screw In Tent Peg (Earth Screw)
