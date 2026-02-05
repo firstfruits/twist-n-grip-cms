@@ -34,8 +34,8 @@ features:
 
 
       These heavy duty screw in pegs are designed to be easy to use, screw in and has less ground disturbance on withdrawal. Wind resistance is 35kg making it a stronger anchoring peg than the equivalent 'knock in' peg. Tote bags, also made in NZ are available, each tote bag can hold up to six screw in pegs and a NZ made hand tool to make a tent peg set. Tote bags work with a drawstring and are lightweight unlike leather tote bags.
-    image: src/assets/uploads/f2.webp
-    imageAlt: Forest scene with sunlight
+    image: /images/about-peg.webp
+    imageAlt: New Zealand Flag and Heart Graphic
     reverse: true
   - title: Manufactured in New Zealand
     content: >
@@ -48,6 +48,8 @@ features:
 
       Size: Overall length 175mm; the tapered shaft length is 154mm x 20mm tapering to 10mm. Head diameter: 45mm.
     reverse: false
+    imageAlt: New Zealand Flag and Heart Graphic
+    image: /images/designed-in-new-zealand.webp
 products:
   - id: 1
     title: One Twist n Grip Tough Screw In Tent Peg (Earth Screw)
