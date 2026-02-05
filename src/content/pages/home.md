@@ -20,8 +20,8 @@ features:
 
 
       *The Twist-n-Grip peg works like a regular screw which is why we nickname it an EarthScrew! It is simply screwed in and out of the earth giving you a good secure anchorage point. Use it to hold down tents, bivouacs, shade coverings, awnings, canopies or gazebos. Tie down the trampoline, furniture, pet cage and so many other items. In the garden, use it for young shrub tie downs, secure growing tunnels or pinning weed mat and soil erosion materials it has so many uses. Removal is as easy as insertion, just unscrew it, no more pulling and straining required, simple and easy.*
-    image: /f1.webp
-    imageAlt: Camping scene with tent and fire
+    image: /images/about-peg.webp
+    imageAlt: Twist n Grip Earth Screws with Hand Tool and Tote Bag
     reverse: false
   - title: Designed in New Zealand
     content: >
@@ -34,8 +34,8 @@ features:
 
 
       These heavy duty screw in pegs are designed to be easy to use, screw in and has less ground disturbance on withdrawal. Wind resistance is 35kg making it a stronger anchoring peg than the equivalent 'knock in' peg. Tote bags, also made in NZ are available, each tote bag can hold up to six screw in pegs and a NZ made hand tool to make a tent peg set. Tote bags work with a drawstring and are lightweight unlike leather tote bags.
-    image: /images/about-peg.webp
-    imageAlt: New Zealand Flag and Heart Graphic
+    image: /images/peg-product-image.webp
+    imageAlt: Twist n Grip Earth Screw Peg
     reverse: true
   - title: Manufactured in New Zealand
     content: >
