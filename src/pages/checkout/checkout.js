@@ -4,7 +4,6 @@
   const increaseBtn = document.getElementById("increase-qty");
   const checkoutForm = document.getElementById("checkout-form");
 
-  // Selection elements
   const productNameEl = document.querySelector("h3.text-lg.font-medium");
   const productDescEl = document.querySelector("p.text-gray-600.text-sm");
   const productPriceEl = document.querySelector("p.text-2xl.font-bold");
@@ -124,7 +123,6 @@
       productData = JSON.parse(storedData);
       currentQuantity = productData.quantity || 1;
 
-      // Update UI with stored data
       if (productNameEl) productNameEl.textContent = productData.title;
       if (productDescEl) productDescEl.textContent = productData.description;
       if (productPriceEl)
@@ -149,7 +147,6 @@
       const total = (currentQuantity * price).toFixed(2);
       totalPriceDisplay.textContent = `$${total}`;
 
-      // Update hidden form fields
       const hiddenName = document.getElementById("hidden-product-name");
       const hiddenQty = document.getElementById("hidden-product-qty");
       const hiddenTotal = document.getElementById("hidden-total-price");
@@ -158,12 +155,10 @@
       if (hiddenTotal) hiddenTotal.value = total;
     }
 
-    // Sync back to localStorage
     productData.quantity = currentQuantity;
     localStorage.setItem("checkout_product", JSON.stringify(productData));
   }
 
-  // Form Validation Logic
   function checkFormValidity() {
     return checkoutForm.checkValidity();
   }
@@ -180,7 +175,6 @@
 
   async function submitToNetlify(paymentIntentId, paymentStatus) {
     const formData = new FormData(checkoutForm);
-    // Replace paypal fields with stripe fields
     formData.set("stripe-transaction-id", paymentIntentId);
     formData.set("stripe-status", paymentStatus);
     formData.set("form-name", "checkout");
@@ -213,7 +207,6 @@
       currentQuantity--;
       updateDisplay();
 
-      // Debounce payment intent update
       clearTimeout(updateTimeout);
       updateTimeout = setTimeout(createOrUpdatePaymentIntent, 500);
     }
@@ -224,7 +217,6 @@
     currentQuantity++;
     updateDisplay();
 
-    // Debounce payment intent update
     clearTimeout(updateTimeout);
     updateTimeout = setTimeout(createOrUpdatePaymentIntent, 500);
   });
@@ -247,7 +239,6 @@
     setLoading(true);
     showMessage("");
 
-    // Gather shipping data from form fields to send to Stripe
     const formData = new FormData(checkoutForm);
     const billingDetails = {
       name: formData.get("fullName"),
@@ -257,7 +248,7 @@
         line1: formData.get("address"),
         city: formData.get("city"),
         postal_code: formData.get("postalCode"),
-        country: formData.get("country"), // In production, consider mapping this to ISO 2-letter codes
+        country: formData.get("country"), 
       },
     };
 
@@ -272,11 +263,10 @@
           address: billingDetails.address,
         },
       },
-      redirect: "if_required", // stays on page if authentication succeeds
+      redirect: "if_required", 
     });
 
     if (error) {
-      // Show error to customer
       if (error.type === "card_error" || error.type === "validation_error") {
         showMessage(error.message);
       } else {
@@ -284,18 +274,17 @@
       }
       setLoading(false);
     } else if (paymentIntent && paymentIntent.status === "succeeded") {
-      // Payment Successful!
+      
       showMessage("");
 
-      // Submit order details to Netlify CMS
+      
       await submitToNetlify(paymentIntent.id, paymentIntent.status);
 
       showToast();
 
-      // Clear cart/checkout product
       localStorage.removeItem("checkout_product");
 
-      // Redirect to home after delay
+
       setTimeout(() => {
         window.location.href = "/";
       }, 2000);
@@ -307,10 +296,8 @@
 
   checkoutForm?.addEventListener("submit", (e) => {
     e.preventDefault();
-    // Use the custom click handler on the button instead
   });
 
-  // Initial load
   function initCheckout() {
     loadProductData();
     initializeStripe();
