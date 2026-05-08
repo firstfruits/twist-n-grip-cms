@@ -433,7 +433,7 @@ const stripePubKey = import.meta.env.STRIPE_PUBLISHABLE_KEY;
 
     const payload = {
       product: { ...productData, quantity: currentQuantity },
-      intentId: currentIntentId, // will be null initially, creates new intent
+      intentId: currentIntentId,
     };
 
     try {
@@ -449,18 +449,10 @@ const stripePubKey = import.meta.env.STRIPE_PUBLISHABLE_KEY;
         throw new Error(data.error || "Failed to initialize payment");
       }
 
-      // Save intent ID so we can update it later instead of recreating
       currentIntentId = data.id;
-
-      // Unmount old elements if re-initializing completely
       const paymentElementContainer =
         document.getElementById("payment-element");
       if (elements) {
-        // Just let Stripe manage the update internally since we passed intentId to backend
-        // elements.fetchUpdates() would be ideal, but for vanilla JS simplicity sometimes
-        // passing clientSecret again isn't strictly required if the backend updated the intent.
-        // Actually, Stripe requires updating elements instance if amount changed if it doesn't auto-sync.
-        // For safety, we will just remount the exact element.
         paymentElementContainer.innerHTML = "";
       }
 

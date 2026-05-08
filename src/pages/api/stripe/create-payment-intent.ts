@@ -41,9 +41,7 @@ export const POST: APIRoute = async ({ request }) => {
       paymentIntent = await stripe.paymentIntents.create({
         amount: amount,
         currency: "usd",
-        automatic_payment_methods: {
-          enabled: true,
-        },
+        payment_method_types: ["card"],
         metadata: {
           productName: product.title || "Twist-n-Grip",
         },
