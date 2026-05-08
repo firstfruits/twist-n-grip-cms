@@ -11,12 +11,12 @@ const product = {
 
 const quantity = 1;
 const totalPrice = product.price * quantity;
+
+const stripePubKey = import.meta.env.STRIPE_PUBLISHABLE_KEY;
 ---
 
 <Layout>
-  <script
-    src="https://www.paypal.com/sdk/js?client-id=AbbTEBo-hqYTwvVYiMGnp5978rTHEO4Yah8554LV-0l9eMgII8JdsqrliMQU2B5NNdLCN_JQYvDcDbMr&currency=USD"
-    is:inline></script>
+  <script src="https://js.stripe.com/v3/" is:inline></script>
 
   <style>
     /* Toast Styles */
@@ -45,13 +45,32 @@ const totalPrice = product.price * quantity;
       opacity: 1;
     }
 
-    /* Overlay styles for disabled buttons */
-    #paypal-button-container.disabled {
+    /* Overlay form when loading */
+    #checkout-form.processing {
       pointer-events: none;
-      opacity: 0.5;
-      filter: grayscale(1);
+      opacity: 0.7;
+    }
+
+    /* Stripe Elements loader */
+    .spinner {
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top: 3px solid #fff;
+      width: 20px;
+      height: 20px;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+      100% {
+        transform: rotate(360deg);
+      }
     }
   </style>
+
+  <div id="stripe-container" data-pubkey={stripePubKey} class="hidden"></div>
 
   <div id="toast">Payment Successful! Order Placed.</div>
   <div class="min-h-screen bg-gray-50">
@@ -189,13 +208,13 @@ const totalPrice = product.price * quantity;
               <input type="hidden" name="bot-field" />
               <input
                 type="hidden"
-                name="paypal-transaction-id"
-                id="paypal-tid"
+                name="stripe-transaction-id"
+                id="stripe-tid"
               />
               <input
                 type="hidden"
-                name="paypal-status"
-                id="paypal-status-input"
+                name="stripe-status"
+                id="stripe-status-input"
               />
               <input
                 type="hidden"
@@ -327,11 +346,45 @@ const totalPrice = product.price * quantity;
                 </div>
               </div>
 
-              <!-- PayPal Button -->
-              <div class="pt-6">
-                <div id="paypal-button-container"></div>
-                <p class="text-center text-sm text-gray-500 mt-3">
-                  Secure payment processing via PayPal
+              <!-- Stripe Payment Element -->
+              <div class="pt-6 border-t border-gray-200 mt-6">
+                <h3 class="text-lg font-medium mb-4 text-gray-800">
+                  Secure Payment
+                </h3>
+                <div id="payment-element">
+                  <!--Stripe.js injects the Payment Element-->
+                </div>
+                <div
+                  id="payment-message"
+                  class="hidden mt-3 text-sm text-red-600 bg-red-50 p-3 rounded text-center"
+                >
+                </div>
+
+                <button
+                  id="submit"
+                  type="button"
+                  class="mt-6 w-full bg-[#1e1b4b] text-white py-4 px-4 rounded-lg font-semibold hover:bg-black transition-colors focus:outline-none focus:ring-2 focus:ring-[#d4183d] flex justify-center items-center disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#1e1b4b]"
+                >
+                  <span id="button-text">Pay Now</span>
+                  <div class="spinner hidden" id="spinner"></div>
+                </button>
+                <p
+                  class="text-center text-xs text-gray-500 mt-3 font-medium flex items-center justify-center gap-1"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    ><rect x="3" y="11" width="18" height="11" rx="2" ry="2"
+                    ></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg
+                  >
+                  Payments are secure and encrypted via Stripe
                 </p>
               </div>
             </form>
@@ -357,6 +410,119 @@ const totalPrice = product.price * quantity;
 
   let productData = null;
   let currentQuantity = 1;
+  let stripe;
+  let elements;
+  let currentIntentId = null;
+
+  async function initializeStripe() {
+    const container = document.getElementById("stripe-container");
+    const pubKey = container?.dataset.pubkey;
+
+    if (!pubKey || !window.Stripe) {
+      console.error("Stripe could not be initialized. Missing key or SDK.");
+      return;
+    }
+
+    stripe = window.Stripe(pubKey);
+
+    await createOrUpdatePaymentIntent();
+  }
+
+  async function createOrUpdatePaymentIntent() {
+    if (!productData) return;
+
+    const payload = {
+      product: { ...productData, quantity: currentQuantity },
+      intentId: currentIntentId, // will be null initially, creates new intent
+    };
+
+    try {
+      const response = await fetch("/api/stripe/create-payment-intent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to initialize payment");
+      }
+
+      // Save intent ID so we can update it later instead of recreating
+      currentIntentId = data.id;
+
+      // Unmount old elements if re-initializing completely
+      const paymentElementContainer =
+        document.getElementById("payment-element");
+      if (elements) {
+        // Just let Stripe manage the update internally since we passed intentId to backend
+        // elements.fetchUpdates() would be ideal, but for vanilla JS simplicity sometimes
+        // passing clientSecret again isn't strictly required if the backend updated the intent.
+        // Actually, Stripe requires updating elements instance if amount changed if it doesn't auto-sync.
+        // For safety, we will just remount the exact element.
+        paymentElementContainer.innerHTML = "";
+      }
+
+      const appearance = {
+        theme: "stripe",
+        variables: {
+          colorPrimary: "#d4183d",
+          colorBackground: "#ffffff",
+          colorText: "#30313d",
+          fontFamily: "Inter, sans-serif",
+          spacingUnit: "4px",
+          borderRadius: "8px",
+        },
+      };
+
+      elements = stripe.elements({
+        appearance,
+        clientSecret: data.clientSecret,
+      });
+
+      const paymentElementOptions = {
+        layout: "tabs",
+      };
+
+      const paymentElement = elements.create("payment", paymentElementOptions);
+      paymentElement.mount("#payment-element");
+    } catch (err) {
+      showMessage("Payment initialization failed. " + err.message);
+    }
+  }
+
+  function showMessage(messageText) {
+    const messageContainer = document.querySelector("#payment-message");
+    if (!messageContainer) return;
+
+    if (messageText) {
+      messageContainer.classList.remove("hidden");
+      messageContainer.textContent = messageText;
+    } else {
+      messageContainer.classList.add("hidden");
+      messageContainer.textContent = "";
+    }
+  }
+
+  function setLoading(isLoading) {
+    const submitBtn = document.querySelector("#submit");
+    const spinner = document.querySelector("#spinner");
+    const buttonText = document.querySelector("#button-text");
+    const form = document.querySelector("#checkout-form");
+
+    if (isLoading) {
+      submitBtn.disabled = true;
+      spinner.classList.remove("hidden");
+      buttonText.classList.add("hidden");
+      form.classList.add("processing");
+    } else {
+      submitBtn.disabled = false;
+      spinner.classList.add("hidden");
+      buttonText.classList.remove("hidden");
+      form.classList.remove("processing");
+    }
+  }
 
   function loadProductData() {
     const storedData = localStorage.getItem("checkout_product");
@@ -405,19 +571,8 @@ const totalPrice = product.price * quantity;
 
   // Form Validation Logic
   function checkFormValidity() {
-    const isValid = checkoutForm.checkValidity();
-    const paypalContainer = document.getElementById("paypal-button-container");
-    if (paypalContainer) {
-      if (isValid) {
-        paypalContainer.classList.remove("disabled");
-      } else {
-        paypalContainer.classList.add("disabled");
-      }
-    }
-    return isValid;
+    return checkoutForm.checkValidity();
   }
-
-  checkoutForm?.addEventListener("input", checkFormValidity);
 
   function showToast() {
     const toast = document.getElementById("toast");
@@ -429,11 +584,11 @@ const totalPrice = product.price * quantity;
     }
   }
 
-  async function submitToNetlify(orderData) {
+  async function submitToNetlify(paymentIntentId, paymentStatus) {
     const formData = new FormData(checkoutForm);
-    // Ensure the hidden fields are synced (they should be, but let's be safe)
-    formData.set("paypal-transaction-id", orderData.id);
-    formData.set("paypal-status", orderData.status);
+    // Replace paypal fields with stripe fields
+    formData.set("stripe-transaction-id", paymentIntentId);
+    formData.set("stripe-status", paymentStatus);
     formData.set("form-name", "checkout");
 
     try {
@@ -456,11 +611,17 @@ const totalPrice = product.price * quantity;
     }
   }
 
+  let updateTimeout;
+
   decreaseBtn?.addEventListener("click", (e) => {
     e.preventDefault();
     if (currentQuantity > 1) {
       currentQuantity--;
       updateDisplay();
+
+      // Debounce payment intent update
+      clearTimeout(updateTimeout);
+      updateTimeout = setTimeout(createOrUpdatePaymentIntent, 500);
     }
   });
 
@@ -468,94 +629,98 @@ const totalPrice = product.price * quantity;
     e.preventDefault();
     currentQuantity++;
     updateDisplay();
+
+    // Debounce payment intent update
+    clearTimeout(updateTimeout);
+    updateTimeout = setTimeout(createOrUpdatePaymentIntent, 500);
+  });
+
+  const submitButton = document.getElementById("submit");
+
+  submitButton?.addEventListener("click", async (e) => {
+    e.preventDefault();
+
+    if (!stripe || !elements) {
+      showMessage("Payment gateway not loaded yet.");
+      return;
+    }
+
+    if (!checkFormValidity()) {
+      checkoutForm.reportValidity();
+      return;
+    }
+
+    setLoading(true);
+    showMessage("");
+
+    // Gather shipping data from form fields to send to Stripe
+    const formData = new FormData(checkoutForm);
+    const billingDetails = {
+      name: formData.get("fullName"),
+      email: formData.get("email"),
+      phone: formData.get("phone"),
+      address: {
+        line1: formData.get("address"),
+        city: formData.get("city"),
+        postal_code: formData.get("postalCode"),
+        country: formData.get("country"), // In production, consider mapping this to ISO 2-letter codes
+      },
+    };
+
+    const { error, paymentIntent } = await stripe.confirmPayment({
+      elements,
+      confirmParams: {
+        payment_method_data: {
+          billing_details: billingDetails,
+        },
+        shipping: {
+          name: billingDetails.name,
+          address: billingDetails.address,
+        },
+      },
+      redirect: "if_required", // stays on page if authentication succeeds
+    });
+
+    if (error) {
+      // Show error to customer
+      if (error.type === "card_error" || error.type === "validation_error") {
+        showMessage(error.message);
+      } else {
+        showMessage("An unexpected error occurred.");
+      }
+      setLoading(false);
+    } else if (paymentIntent && paymentIntent.status === "succeeded") {
+      // Payment Successful!
+      showMessage("");
+
+      // Submit order details to Netlify CMS
+      await submitToNetlify(paymentIntent.id, paymentIntent.status);
+
+      showToast();
+
+      // Clear cart/checkout product
+      localStorage.removeItem("checkout_product");
+
+      // Redirect to home after delay
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 2000);
+    } else {
+      showMessage("Payment is processing or requires your action.");
+      setLoading(false);
+    }
   });
 
   checkoutForm?.addEventListener("submit", (e) => {
     e.preventDefault();
+    // Use the custom click handler on the button instead
   });
 
-  function initPayPal() {
-    if (!window.paypal) {
-      console.error("PayPal SDK not loaded");
-      return;
-    }
-
-    const paypalContainer = document.getElementById("paypal-button-container");
-    if (!paypalContainer) return;
-
-    // Clear previous button if any
-    paypalContainer.innerHTML = "";
-
-    window.paypal
-      .Buttons({
-        onClick: function (data, actions) {
-          if (!checkFormValidity()) {
-            alert("Please fill in all required shipping information first.");
-            return actions.reject();
-          }
-          return actions.resolve();
-        },
-        createOrder: function (data, actions) {
-          if (!productData) {
-            alert("Please select a product first");
-            return;
-          }
-
-          const total = (
-            currentQuantity * parseFloat(productData.price)
-          ).toFixed(2);
-
-          return actions.order.create({
-            purchase_units: [
-              {
-                amount: {
-                  value: total,
-                  currency_code: "USD",
-                },
-                description: `${productData.title} (Qty: ${currentQuantity})`,
-              },
-            ],
-          });
-        },
-        onApprove: function (data, actions) {
-          return actions.order.capture().then(async function (orderData) {
-            console.log("Capture result", orderData);
-
-            // Submit to Netlify
-            await submitToNetlify(orderData);
-
-            // Show Toast
-            showToast();
-
-            // Redirect to home after delay
-            setTimeout(() => {
-              window.location.href = "/";
-            }, 2000);
-          });
-        },
-        onError: function (err) {
-          console.error("PayPal Error:", err);
-          alert("An error occurred with PayPal. Please try again.");
-        },
-      })
-      .render("#paypal-button-container");
-
-    // Initial check
-    checkFormValidity();
-  }
-
   // Initial load
-  loadProductData();
-
-  // Initialize PayPal when SDK is ready
-  if (window.paypal) {
-    initPayPal();
-  } else {
-    document.addEventListener("DOMContentLoaded", initPayPal);
-    setTimeout(() => {
-      if (window.paypal) initPayPal();
-    }, 1000);
-  }
+  document.addEventListener("DOMContentLoaded", () => {
+    loadProductData();
+    initializeStripe();
+  });
 </script>
 
 <!-- Business

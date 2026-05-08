@@ -6,10 +6,13 @@ const stripe = new Stripe(
   import.meta.env.STRIPE_SECRET_KEY || "sk_test_placeholder",
 );
 
+export const prerender = false;
+
 export const POST: APIRoute = async ({ request }) => {
   try {
     const body = await request.json();
-    const { product } = body;
+    // Extract optional intentId
+    const { product, intentId } = body;
 
     // Validate the incoming product data
     if (!product || !product.price) {
@@ -26,17 +29,26 @@ export const POST: APIRoute = async ({ request }) => {
     const amount =
       Math.round(parseFloat(product.price) * 100) * (product.quantity || 1);
 
-    // Create a PaymentIntent
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: amount,
-      currency: "usd",
-      automatic_payment_methods: {
-        enabled: true,
-      },
-      metadata: {
-        productName: product.title || "Twist-n-Grip",
-      },
-    });
+    let paymentIntent;
+
+    if (intentId) {
+      // Update existing PaymentIntent if it exists
+      paymentIntent = await stripe.paymentIntents.update(intentId, {
+        amount: amount,
+      });
+    } else {
+      // Create a PaymentIntent
+      paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: "usd",
+        automatic_payment_methods: {
+          enabled: true,
+        },
+        metadata: {
+          productName: product.title || "Twist-n-Grip",
+        },
+      });
+    }
 
     // Return the required clientSecret to the frontend to finalize payment
     return new Response(
