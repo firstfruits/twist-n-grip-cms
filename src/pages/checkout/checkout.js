@@ -1,17 +1,3 @@
-// ── DOM References ──────────────────────────────────────────────────────────
-const quantityDisplay    = document.getElementById("quantity-display");
-const totalPriceDisplay  = document.getElementById("total-price-display");
-const decreaseBtn        = document.getElementById("decrease-qty");
-const increaseBtn        = document.getElementById("increase-qty");
-const checkoutForm       = document.getElementById("checkout-form");
-const proceedBtn         = document.getElementById("proceed-to-payment");
-const backBtn            = document.getElementById("back-to-step1");
-const submitBtn          = document.getElementById("submit");
-const stepsWrapper       = document.getElementById("steps-wrapper");
-const progStep1          = document.getElementById("prog-step-1");
-const progStep2          = document.getElementById("prog-step-2");
-const progLine           = document.getElementById("prog-line");
-
 // ── State ────────────────────────────────────────────────────────────────────
 let productData     = null;
 let currentQuantity = 1;
@@ -19,6 +5,11 @@ let stripe          = null;
 let elements        = null;
 let currentIntentId = null;
 let stripeInitialized = false;  // guard – only create the intent once
+
+// ── DOM References (resolved after DOM is ready) ──────────────────────────────
+let quantityDisplay, totalPriceDisplay, decreaseBtn, increaseBtn;
+let checkoutForm, proceedBtn, backBtn, submitBtn;
+let stepsWrapper, progStep1, progStep2, progLine;
 
 // ── Product Loading ──────────────────────────────────────────────────────────
 function loadProductData() {
@@ -82,21 +73,6 @@ function updateDisplay() {
   localStorage.setItem("checkout_product", JSON.stringify(productData));
 }
 
-// ── Quantity Controls ─────────────────────────────────────────────────────────
-decreaseBtn?.addEventListener("click", (e) => {
-  e.preventDefault();
-  if (currentQuantity > 1) {
-    currentQuantity--;
-    updateDisplay();
-  }
-});
-
-increaseBtn?.addEventListener("click", (e) => {
-  e.preventDefault();
-  currentQuantity++;
-  updateDisplay();
-});
-
 // ── Step Navigation ───────────────────────────────────────────────────────────
 function goToStep2() {
   stepsWrapper.classList.add("step-2");
@@ -128,27 +104,6 @@ function goToStep1() {
   decreaseBtn.disabled = false;
   increaseBtn.disabled = false;
 }
-
-// ── Proceed Button ────────────────────────────────────────────────────────────
-proceedBtn?.addEventListener("click", async () => {
-  // Validate shipping form first
-  if (!checkoutForm.checkValidity()) {
-    checkoutForm.reportValidity();
-    return;
-  }
-
-  goToStep2();
-
-  // Initialize Stripe only once
-  if (!stripeInitialized) {
-    await initializeStripe();
-  }
-});
-
-// ── Back Button ────────────────────────────────────────────────────────────────
-backBtn?.addEventListener("click", () => {
-  goToStep1();
-});
 
 // ── Stripe Init (deferred, runs once) ────────────────────────────────────────
 async function initializeStripe() {
@@ -223,80 +178,6 @@ async function createPaymentIntent() {
   }
 }
 
-// ── Pay Now ────────────────────────────────────────────────────────────────────
-submitBtn?.addEventListener("click", async (e) => {
-  e.preventDefault();
-
-  if (!stripe || !elements) {
-    showMessage("Payment gateway not loaded yet. Please wait.");
-    return;
-  }
-
-  setLoading(true);
-  showMessage("");
-
-  const formData       = new FormData(checkoutForm);
-  const billingDetails = {
-    name:    formData.get("fullName"),
-    email:   formData.get("email"),
-    phone:   formData.get("phone"),
-    address: {
-      line1:       formData.get("address"),
-      city:        formData.get("city"),
-      postal_code: formData.get("postalCode"),
-      country:     formData.get("country"),
-    },
-  };
-
-  const { error, paymentIntent } = await stripe.confirmPayment({
-    elements,
-    confirmParams: {
-      payment_method_data: { billing_details: billingDetails },
-      shipping: {
-        name:    billingDetails.name,
-        address: billingDetails.address,
-      },
-    },
-    redirect: "if_required",
-  });
-
-  if (error) {
-    const errorMsg =
-      error.type === "card_error" || error.type === "validation_error"
-        ? error.message
-        : "An unexpected error occurred. Please try again.";
-
-    // Redirect to failure page
-    const params = new URLSearchParams({ status: "failed", error: errorMsg });
-    window.location.href = `/order-status?${params.toString()}`;
-    setLoading(false);
-  } else if (paymentIntent?.status === "succeeded") {
-    showMessage("");
-    await submitToNetlify(paymentIntent.id, paymentIntent.status);
-
-    // Build redirect URL with order details
-    const price = parseFloat(productData?.price || 0);
-    const total = (currentQuantity * price).toFixed(2);
-    const params = new URLSearchParams({
-      status:  "success",
-      product: productData?.title || "",
-      qty:     currentQuantity,
-      total:   total,
-      txn:     paymentIntent.id,
-    });
-
-    localStorage.removeItem("checkout_product");
-    window.location.href = `/order-status?${params.toString()}`;
-
-  } else {
-    showMessage("Payment is processing or requires additional action.");
-    setLoading(false);
-  }
-});
-
-// Prevent native form submit
-checkoutForm?.addEventListener("submit", (e) => e.preventDefault());
-
 // ── Helpers ────────────────────────────────────────────────────────────────────
 function showMessage(text) {
   const el = document.getElementById("payment-message");
@@ -326,13 +207,6 @@ function setLoading(isLoading) {
   }
 }
 
-function showToast() {
-  const toast = document.getElementById("toast");
-  if (!toast) return;
-  toast.classList.add("show");
-  setTimeout(() => toast.classList.remove("show"), 3500);
-}
-
 async function submitToNetlify(paymentIntentId, paymentStatus) {
   const formData = new FormData(checkoutForm);
   formData.set("stripe-transaction-id", paymentIntentId);
@@ -354,14 +228,132 @@ async function submitToNetlify(paymentIntentId, paymentStatus) {
   }
 }
 
-// ── Boot ────────────────────────────────────────────────────────────────────────
+// ── Boot ─────────────────────────────────────────────────────────────────────
 function initCheckout() {
+  // Resolve DOM references now that DOM is ready
+  quantityDisplay   = document.getElementById("quantity-display");
+  totalPriceDisplay = document.getElementById("total-price-display");
+  decreaseBtn       = document.getElementById("decrease-qty");
+  increaseBtn       = document.getElementById("increase-qty");
+  checkoutForm      = document.getElementById("checkout-form");
+  proceedBtn        = document.getElementById("proceed-to-payment");
+  backBtn           = document.getElementById("back-to-step1");
+  submitBtn         = document.getElementById("submit");
+  stepsWrapper      = document.getElementById("steps-wrapper");
+  progStep1         = document.getElementById("prog-step-1");
+  progStep2         = document.getElementById("prog-step-2");
+  progLine          = document.getElementById("prog-line");
+
+  // Quantity controls
+  decreaseBtn?.addEventListener("click", (e) => {
+    e.preventDefault();
+    if (currentQuantity > 1) {
+      currentQuantity--;
+      updateDisplay();
+    }
+  });
+
+  increaseBtn?.addEventListener("click", (e) => {
+    e.preventDefault();
+    currentQuantity++;
+    updateDisplay();
+  });
+
+  // Proceed button
+  proceedBtn?.addEventListener("click", async () => {
+    if (!checkoutForm.checkValidity()) {
+      checkoutForm.reportValidity();
+      return;
+    }
+    goToStep2();
+    if (!stripeInitialized) {
+      await initializeStripe();
+    }
+  });
+
+  // Back button
+  backBtn?.addEventListener("click", () => {
+    goToStep1();
+  });
+
+  // Pay Now button
+  submitBtn?.addEventListener("click", async (e) => {
+    e.preventDefault();
+
+    if (!stripe || !elements) {
+      showMessage("Payment gateway not loaded yet. Please wait.");
+      return;
+    }
+
+    setLoading(true);
+    showMessage("");
+
+    const formData       = new FormData(checkoutForm);
+    const billingDetails = {
+      name:    formData.get("fullName"),
+      email:   formData.get("email"),
+      phone:   formData.get("phone"),
+      address: {
+        line1:       formData.get("address"),
+        city:        formData.get("city"),
+        postal_code: formData.get("postalCode"),
+        country:     formData.get("country"),
+      },
+    };
+
+    const { error, paymentIntent } = await stripe.confirmPayment({
+      elements,
+      confirmParams: {
+        payment_method_data: { billing_details: billingDetails },
+        shipping: {
+          name:    billingDetails.name,
+          address: billingDetails.address,
+        },
+      },
+      redirect: "if_required",
+    });
+
+    if (error) {
+      const errorMsg =
+        error.type === "card_error" || error.type === "validation_error"
+          ? error.message
+          : "An unexpected error occurred. Please try again.";
+      const params = new URLSearchParams({ status: "failed", error: errorMsg });
+      window.location.href = `/order-status?${params.toString()}`;
+      setLoading(false);
+    } else if (paymentIntent?.status === "succeeded") {
+      showMessage("");
+      await submitToNetlify(paymentIntent.id, paymentIntent.status);
+
+      const price = parseFloat(productData?.price || 0);
+      const total = (currentQuantity * price).toFixed(2);
+      const params = new URLSearchParams({
+        status:  "success",
+        product: productData?.title || "",
+        qty:     currentQuantity,
+        total:   total,
+        txn:     paymentIntent.id,
+      });
+
+      localStorage.removeItem("checkout_product");
+      window.location.href = `/order-status?${params.toString()}`;
+    } else {
+      showMessage("Payment is processing or requires additional action.");
+      setLoading(false);
+    }
+  });
+
+  // Prevent native form submit
+  checkoutForm?.addEventListener("submit", (e) => e.preventDefault());
+
+  // Load product data last
   loadProductData();
-  // Stripe is NOT initialized here — only when user proceeds to Step 2
 }
 
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", initCheckout);
-} else {
-  initCheckout();
+if (typeof document !== "undefined") {
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initCheckout);
+  } else {
+    initCheckout();
+  }
 }
