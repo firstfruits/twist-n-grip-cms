@@ -74,6 +74,10 @@ function updateDisplay() {
   if (recapQty)   recapQty.textContent   = currentQuantity;
   if (recapTotal) recapTotal.textContent = `$${total}`;
 
+  // Update Pay button label with amount
+  const buttonText = document.getElementById("button-text");
+  if (buttonText) buttonText.textContent = `Pay $${total}`;
+
   productData.quantity = currentQuantity;
   localStorage.setItem("checkout_product", JSON.stringify(productData));
 }
@@ -106,6 +110,9 @@ function goToStep2() {
   // Lock quantity controls in Step 2
   decreaseBtn.disabled = true;
   increaseBtn.disabled = true;
+
+  // Scroll to top so order recap + Stripe form are visible
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 function goToStep1() {
