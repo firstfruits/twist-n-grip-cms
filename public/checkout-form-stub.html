@@ -1,0 +1,36 @@
+<!doctype html>
+<!--
+  This page is NOT shown to users.
+  It exists solely so Netlify can discover and register the "checkout" form
+  at build time (required when the checkout page uses SSR / prerender:false).
+  See: https://docs.netlify.com/forms/setup/#submit-javascript-rendered-forms-with-ajax
+-->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Checkout Form Registration</title>
+  </head>
+  <body>
+    <form
+      name="checkout"
+      data-netlify="true"
+      netlify-honeypot="bot-field"
+      hidden
+    >
+      <input type="hidden" name="form-name" value="checkout" />
+      <input type="hidden" name="bot-field" />
+      <input type="hidden" name="stripe-transaction-id" />
+      <input type="hidden" name="stripe-status" />
+      <input type="hidden" name="product-name" />
+      <input type="hidden" name="product-qty" />
+      <input type="hidden" name="total-price" />
+      <input type="text" name="fullName" />
+      <input type="email" name="email" />
+      <input type="tel" name="phone" />
+      <textarea name="address"></textarea>
+      <input type="text" name="city" />
+      <input type="text" name="postalCode" />
+      <input type="text" name="country" />
+    </form>
+  </body>
+</html>

@@ -31,20 +31,31 @@ export const POST: APIRoute = async ({ request }) => {
 
     let paymentIntent;
 
+    const unitPrice = parseFloat(product.price);
+    const qty = product.quantity || 1;
+    const totalAmount = ((unitPrice * qty * 100) / 100).toFixed(2); // dollar string
+
+    const metadata = {
+      productName: product.title || "Twist-n-Grip",
+      quantity: String(qty),
+      unitPrice: `$${unitPrice.toFixed(2)}`,
+      totalAmount: `$${totalAmount}`,
+    };
+
     if (intentId) {
       // Update existing PaymentIntent if it exists
       paymentIntent = await stripe.paymentIntents.update(intentId, {
-        amount: amount,
+        amount,
+        metadata,
       });
     } else {
       // Create a PaymentIntent
       paymentIntent = await stripe.paymentIntents.create({
-        amount: amount,
+        amount,
+        // currency: "nzd",
         currency: "usd",
         payment_method_types: ["card"],
-        metadata: {
-          productName: product.title || "Twist-n-Grip",
-        },
+        metadata,
       });
     }
 
