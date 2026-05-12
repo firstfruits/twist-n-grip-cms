@@ -1,310 +1,345 @@
-  const quantityDisplay = document.getElementById("quantity-display");
-  const totalPriceDisplay = document.getElementById("total-price-display");
-  const decreaseBtn = document.getElementById("decrease-qty");
-  const increaseBtn = document.getElementById("increase-qty");
-  const checkoutForm = document.getElementById("checkout-form");
+// ── DOM References ──────────────────────────────────────────────────────────
+const quantityDisplay    = document.getElementById("quantity-display");
+const totalPriceDisplay  = document.getElementById("total-price-display");
+const decreaseBtn        = document.getElementById("decrease-qty");
+const increaseBtn        = document.getElementById("increase-qty");
+const checkoutForm       = document.getElementById("checkout-form");
+const proceedBtn         = document.getElementById("proceed-to-payment");
+const backBtn            = document.getElementById("back-to-step1");
+const submitBtn          = document.getElementById("submit");
+const stepsWrapper       = document.getElementById("steps-wrapper");
+const progStep1          = document.getElementById("prog-step-1");
+const progStep2          = document.getElementById("prog-step-2");
+const progLine           = document.getElementById("prog-line");
 
-  const productNameEl = document.querySelector("h3.text-lg.font-medium");
-  const productDescEl = document.querySelector("p.text-gray-600.text-sm");
-  const productPriceEl = document.querySelector("p.text-2xl.font-bold");
-  const productImageEl = document.querySelector("img.object-contain");
+// ── State ────────────────────────────────────────────────────────────────────
+let productData     = null;
+let currentQuantity = 1;
+let stripe          = null;
+let elements        = null;
+let currentIntentId = null;
+let stripeInitialized = false;  // guard – only create the intent once
 
-  let productData = null;
-  let currentQuantity = 1;
-  let stripe;
-  let elements;
-  let currentIntentId = null;
+// ── Product Loading ──────────────────────────────────────────────────────────
+function loadProductData() {
+  const storedData = localStorage.getItem("checkout_product");
+  if (storedData) {
+    productData     = JSON.parse(storedData);
+    currentQuantity = productData.quantity || 1;
 
-  async function initializeStripe() {
+    // Fill visible text from stored data (JS overwrites Astro defaults)
+    const nameEl  = document.querySelector("h3.text-lg");
+    const descEl  = document.querySelector("p.text-sm.text-gray-500.mb-3");
+    const priceEl = document.querySelector("p.text-xl.font-bold");
+    const imgEl   = document.querySelector("img.object-contain");
+
+    if (nameEl)  nameEl.textContent  = productData.title;
+    if (descEl)  descEl.textContent  = productData.description;
+    if (priceEl) priceEl.textContent = `$${parseFloat(productData.price).toFixed(2)}`;
+    if (imgEl)  { imgEl.src = productData.image; imgEl.alt = productData.title; }
+  } else {
+    // Fallback: read static data embedded in the page via data attributes
     const container = document.getElementById("stripe-container");
-    const pubKey = container?.dataset.pubkey;
-
-    if (!pubKey || !window.Stripe) {
-      console.error("Stripe could not be initialized. Missing key or SDK.");
-      return;
-    }
-
-    stripe = window.Stripe(pubKey);
-
-    await createOrUpdatePaymentIntent();
+    const fallbackPrice = parseFloat(container?.dataset.price || "0");
+    const fallbackTitle = container?.dataset.title || "Product";
+    productData = { title: fallbackTitle, price: fallbackPrice, quantity: 1 };
+    console.warn("No product data in localStorage — using page defaults.");
   }
+  updateDisplay();
+}
 
-  async function createOrUpdatePaymentIntent() {
-    if (!productData) return;
+// ── Display Sync ─────────────────────────────────────────────────────────────
+function updateDisplay() {
+  if (!productData) return;
 
-    const payload = {
-      product: { ...productData, quantity: currentQuantity },
-      intentId: currentIntentId,
-    };
+  const price = parseFloat(productData.price);
+  const total = (currentQuantity * price).toFixed(2);
 
-    try {
-      const response = await fetch("/api/stripe/create-payment-intent", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+  if (quantityDisplay)   quantityDisplay.textContent  = currentQuantity;
+  if (totalPriceDisplay) totalPriceDisplay.textContent = `$${total}`;
 
-      const data = await response.json();
+  // Hidden form fields
+  const hiddenName  = document.getElementById("hidden-product-name");
+  const hiddenQty   = document.getElementById("hidden-product-qty");
+  const hiddenTotal = document.getElementById("hidden-total-price");
+  if (hiddenName)  hiddenName.value  = productData.title;
+  if (hiddenQty)   hiddenQty.value   = currentQuantity;
+  if (hiddenTotal) hiddenTotal.value = total;
 
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to initialize payment");
-      }
+  // Sync recap on Step 2
+  const recapName  = document.getElementById("recap-name");
+  const recapQty   = document.getElementById("recap-qty");
+  const recapTotal = document.getElementById("recap-total");
+  if (recapName)  recapName.textContent  = productData.title;
+  if (recapQty)   recapQty.textContent   = currentQuantity;
+  if (recapTotal) recapTotal.textContent = `$${total}`;
 
-      currentIntentId = data.id;
-      const paymentElementContainer =
-        document.getElementById("payment-element");
-      if (elements) {
-        paymentElementContainer.innerHTML = "";
-      }
+  productData.quantity = currentQuantity;
+  localStorage.setItem("checkout_product", JSON.stringify(productData));
+}
 
-      const appearance = {
-        theme: "stripe",
-        variables: {
-          colorPrimary: "#d4183d",
-          colorBackground: "#ffffff",
-          colorText: "#30313d",
-          fontFamily: "Inter, sans-serif",
-          spacingUnit: "4px",
-          borderRadius: "8px",
-        },
-      };
-
-      elements = stripe.elements({
-        appearance,
-        clientSecret: data.clientSecret,
-      });
-
-      const paymentElementOptions = {
-        layout: "tabs",
-      };
-
-      const paymentElement = elements.create("payment", paymentElementOptions);
-      paymentElement.mount("#payment-element");
-    } catch (err) {
-      showMessage("Payment initialization failed. " + err.message);
-    }
-  }
-
-  function showMessage(messageText) {
-    const messageContainer = document.querySelector("#payment-message");
-    if (!messageContainer) return;
-
-    if (messageText) {
-      messageContainer.classList.remove("hidden");
-      messageContainer.textContent = messageText;
-    } else {
-      messageContainer.classList.add("hidden");
-      messageContainer.textContent = "";
-    }
-  }
-
-  function setLoading(isLoading) {
-    const submitBtn = document.querySelector("#submit");
-    const spinner = document.querySelector("#spinner");
-    const buttonText = document.querySelector("#button-text");
-    const form = document.querySelector("#checkout-form");
-
-    if (isLoading) {
-      submitBtn.disabled = true;
-      spinner.classList.remove("hidden");
-      buttonText.classList.add("hidden");
-      form.classList.add("processing");
-    } else {
-      submitBtn.disabled = false;
-      spinner.classList.add("hidden");
-      buttonText.classList.remove("hidden");
-      form.classList.remove("processing");
-    }
-  }
-
-  function loadProductData() {
-    const storedData = localStorage.getItem("checkout_product");
-    if (storedData) {
-      productData = JSON.parse(storedData);
-      currentQuantity = productData.quantity || 1;
-
-      if (productNameEl) productNameEl.textContent = productData.title;
-      if (productDescEl) productDescEl.textContent = productData.description;
-      if (productPriceEl)
-        productPriceEl.textContent = `$${parseFloat(productData.price).toFixed(2)}`;
-      if (productImageEl) {
-        productImageEl.src = productData.image;
-        productImageEl.alt = productData.title;
-      }
-
-      updateDisplay();
-    } else {
-      console.warn("No product data found in localStorage");
-    }
-  }
-
-  function updateDisplay() {
-    if (!productData) return;
-
-    if (quantityDisplay) quantityDisplay.textContent = currentQuantity;
-    if (totalPriceDisplay) {
-      const price = parseFloat(productData.price);
-      const total = (currentQuantity * price).toFixed(2);
-      totalPriceDisplay.textContent = `$${total}`;
-
-      const hiddenName = document.getElementById("hidden-product-name");
-      const hiddenQty = document.getElementById("hidden-product-qty");
-      const hiddenTotal = document.getElementById("hidden-total-price");
-      if (hiddenName) hiddenName.value = productData.title;
-      if (hiddenQty) hiddenQty.value = currentQuantity;
-      if (hiddenTotal) hiddenTotal.value = total;
-    }
-
-    productData.quantity = currentQuantity;
-    localStorage.setItem("checkout_product", JSON.stringify(productData));
-  }
-
-  function checkFormValidity() {
-    return checkoutForm.checkValidity();
-  }
-
-  function showToast() {
-    const toast = document.getElementById("toast");
-    if (toast) {
-      toast.classList.add("show");
-      setTimeout(() => {
-        toast.classList.remove("show");
-      }, 3000);
-    }
-  }
-
-  async function submitToNetlify(paymentIntentId, paymentStatus) {
-    const formData = new FormData(checkoutForm);
-    formData.set("stripe-transaction-id", paymentIntentId);
-    formData.set("stripe-status", paymentStatus);
-    formData.set("form-name", "checkout");
-
-    try {
-      const response = await fetch(window.location.pathname, {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams(formData).toString(),
-      });
-
-      if (response.ok) {
-        console.log("Form successfully submitted to Netlify");
-      } else {
-        console.error(
-          "Netlify submission failed with status:",
-          response.status,
-        );
-      }
-    } catch (error) {
-      console.error("Netlify submission error:", error);
-    }
-  }
-
-  let updateTimeout;
-
-  decreaseBtn?.addEventListener("click", (e) => {
-    e.preventDefault();
-    if (currentQuantity > 1) {
-      currentQuantity--;
-      updateDisplay();
-
-      clearTimeout(updateTimeout);
-      updateTimeout = setTimeout(createOrUpdatePaymentIntent, 500);
-    }
-  });
-
-  increaseBtn?.addEventListener("click", (e) => {
-    e.preventDefault();
-    currentQuantity++;
+// ── Quantity Controls ─────────────────────────────────────────────────────────
+decreaseBtn?.addEventListener("click", (e) => {
+  e.preventDefault();
+  if (currentQuantity > 1) {
+    currentQuantity--;
     updateDisplay();
+  }
+});
 
-    clearTimeout(updateTimeout);
-    updateTimeout = setTimeout(createOrUpdatePaymentIntent, 500);
-  });
+increaseBtn?.addEventListener("click", (e) => {
+  e.preventDefault();
+  currentQuantity++;
+  updateDisplay();
+});
 
-  const submitButton = document.getElementById("submit");
+// ── Step Navigation ───────────────────────────────────────────────────────────
+function goToStep2() {
+  stepsWrapper.classList.add("step-2");
 
-  submitButton?.addEventListener("click", async (e) => {
-    e.preventDefault();
+  // Progress bar
+  progStep1.classList.remove("active");
+  progStep1.classList.add("done");
+  progLine.classList.add("done");
+  progStep2.classList.add("active");
 
-    if (!stripe || !elements) {
-      showMessage("Payment gateway not loaded yet.");
-      return;
-    }
+  // Lock quantity controls in Step 2
+  decreaseBtn.disabled = true;
+  increaseBtn.disabled = true;
+}
 
-    if (!checkFormValidity()) {
-      checkoutForm.reportValidity();
-      return;
-    }
+function goToStep1() {
+  stepsWrapper.classList.remove("step-2");
 
-    setLoading(true);
-    showMessage("");
+  // Progress bar
+  progStep2.classList.remove("active");
+  progLine.classList.remove("done");
+  progStep1.classList.remove("done");
+  progStep1.classList.add("active");
 
-    const formData = new FormData(checkoutForm);
-    const billingDetails = {
-      name: formData.get("fullName"),
-      email: formData.get("email"),
-      phone: formData.get("phone"),
-      address: {
-        line1: formData.get("address"),
-        city: formData.get("city"),
-        postal_code: formData.get("postalCode"),
-        country: formData.get("country"), 
-      },
-    };
+  // Unlock quantity controls
+  decreaseBtn.disabled = false;
+  increaseBtn.disabled = false;
+}
 
-    const { error, paymentIntent } = await stripe.confirmPayment({
-      elements,
-      confirmParams: {
-        payment_method_data: {
-          billing_details: billingDetails,
-        },
-        shipping: {
-          name: billingDetails.name,
-          address: billingDetails.address,
-        },
-      },
-      redirect: "if_required", 
+// ── Proceed Button ────────────────────────────────────────────────────────────
+proceedBtn?.addEventListener("click", async () => {
+  // Validate shipping form first
+  if (!checkoutForm.checkValidity()) {
+    checkoutForm.reportValidity();
+    return;
+  }
+
+  goToStep2();
+
+  // Initialize Stripe only once
+  if (!stripeInitialized) {
+    await initializeStripe();
+  }
+});
+
+// ── Back Button ────────────────────────────────────────────────────────────────
+backBtn?.addEventListener("click", () => {
+  goToStep1();
+});
+
+// ── Stripe Init (deferred, runs once) ────────────────────────────────────────
+async function initializeStripe() {
+  const container = document.getElementById("stripe-container");
+  const pubKey    = container?.dataset.pubkey;
+
+  if (!pubKey || !window.Stripe) {
+    showMessage("Payment gateway could not be loaded. Please refresh.");
+    return;
+  }
+
+  stripe = window.Stripe(pubKey);
+  await createPaymentIntent();
+}
+
+async function createPaymentIntent() {
+  if (!productData) return;
+
+  const payload = {
+    product:  { ...productData, quantity: currentQuantity },
+    intentId: currentIntentId, // null on first call
+  };
+
+  try {
+    const response = await fetch("/api/stripe/create-payment-intent", {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify(payload),
     });
 
-    if (error) {
-      if (error.type === "card_error" || error.type === "validation_error") {
-        showMessage(error.message);
-      } else {
-        showMessage("An unexpected error occurred.");
-      }
-      setLoading(false);
-    } else if (paymentIntent && paymentIntent.status === "succeeded") {
-      
-      showMessage("");
+    const data = await response.json();
 
-      
-      await submitToNetlify(paymentIntent.id, paymentIntent.status);
-
-      showToast();
-
-      localStorage.removeItem("checkout_product");
-
-
-      setTimeout(() => {
-        window.location.href = "/";
-      }, 2000);
-    } else {
-      showMessage("Payment is processing or requires your action.");
-      setLoading(false);
+    if (!response.ok) {
+      throw new Error(data.error || "Failed to initialize payment");
     }
-  });
 
-  checkoutForm?.addEventListener("submit", (e) => {
-    e.preventDefault();
-  });
+    currentIntentId = data.id;
 
-  function initCheckout() {
-    loadProductData();
-    initializeStripe();
+    const appearance = {
+      theme:     "stripe",
+      variables: {
+        colorPrimary:    "#d4183d",
+        colorBackground: "#ffffff",
+        colorText:       "#30313d",
+        fontFamily:      "Inter, sans-serif",
+        spacingUnit:     "4px",
+        borderRadius:    "8px",
+      },
+    };
+
+    elements = stripe.elements({
+      appearance,
+      clientSecret: data.clientSecret,
+    });
+
+    const paymentElement = elements.create("payment", { layout: "tabs" });
+
+    const paymentElementContainer = document.getElementById("payment-element");
+    paymentElement.mount("#payment-element");
+
+    // When the element is ready, hide the skeleton and show the element
+    paymentElement.on("ready", () => {
+      document.getElementById("payment-loading").style.display = "none";
+      paymentElementContainer.classList.remove("hidden");
+      submitBtn.disabled = false;
+      stripeInitialized  = true;
+    });
+
+  } catch (err) {
+    document.getElementById("payment-loading").style.display = "none";
+    showMessage("Payment initialization failed. " + err.message);
+  }
+}
+
+// ── Pay Now ────────────────────────────────────────────────────────────────────
+submitBtn?.addEventListener("click", async (e) => {
+  e.preventDefault();
+
+  if (!stripe || !elements) {
+    showMessage("Payment gateway not loaded yet. Please wait.");
+    return;
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initCheckout);
+  setLoading(true);
+  showMessage("");
+
+  const formData       = new FormData(checkoutForm);
+  const billingDetails = {
+    name:    formData.get("fullName"),
+    email:   formData.get("email"),
+    phone:   formData.get("phone"),
+    address: {
+      line1:       formData.get("address"),
+      city:        formData.get("city"),
+      postal_code: formData.get("postalCode"),
+      country:     formData.get("country"),
+    },
+  };
+
+  const { error, paymentIntent } = await stripe.confirmPayment({
+    elements,
+    confirmParams: {
+      payment_method_data: { billing_details: billingDetails },
+      shipping: {
+        name:    billingDetails.name,
+        address: billingDetails.address,
+      },
+    },
+    redirect: "if_required",
+  });
+
+  if (error) {
+    showMessage(
+      error.type === "card_error" || error.type === "validation_error"
+        ? error.message
+        : "An unexpected error occurred."
+    );
+    setLoading(false);
+  } else if (paymentIntent?.status === "succeeded") {
+    showMessage("");
+    await submitToNetlify(paymentIntent.id, paymentIntent.status);
+    showToast();
+    localStorage.removeItem("checkout_product");
+    setTimeout(() => { window.location.href = "/"; }, 2500);
   } else {
-    initCheckout();
+    showMessage("Payment is processing or requires additional action.");
+    setLoading(false);
   }
+});
+
+// Prevent native form submit
+checkoutForm?.addEventListener("submit", (e) => e.preventDefault());
+
+// ── Helpers ────────────────────────────────────────────────────────────────────
+function showMessage(text) {
+  const el = document.getElementById("payment-message");
+  if (!el) return;
+  if (text) {
+    el.classList.remove("hidden");
+    el.textContent = text;
+  } else {
+    el.classList.add("hidden");
+    el.textContent = "";
+  }
+}
+
+function setLoading(isLoading) {
+  const spinner    = document.getElementById("spinner");
+  const buttonText = document.getElementById("button-text");
+
+  submitBtn.disabled = isLoading;
+  if (isLoading) {
+    spinner.classList.remove("hidden");
+    buttonText.classList.add("hidden");
+    checkoutForm.classList.add("processing");
+  } else {
+    spinner.classList.add("hidden");
+    buttonText.classList.remove("hidden");
+    checkoutForm.classList.remove("processing");
+  }
+}
+
+function showToast() {
+  const toast = document.getElementById("toast");
+  if (!toast) return;
+  toast.classList.add("show");
+  setTimeout(() => toast.classList.remove("show"), 3500);
+}
+
+async function submitToNetlify(paymentIntentId, paymentStatus) {
+  const formData = new FormData(checkoutForm);
+  formData.set("stripe-transaction-id", paymentIntentId);
+  formData.set("stripe-status", paymentStatus);
+  formData.set("form-name", "checkout");
+
+  try {
+    const response = await fetch(window.location.pathname, {
+      method:  "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body:    new URLSearchParams(formData).toString(),
+    });
+
+    if (!response.ok) {
+      console.error("Netlify submission failed:", response.status);
+    }
+  } catch (err) {
+    console.error("Netlify submission error:", err);
+  }
+}
+
+// ── Boot ────────────────────────────────────────────────────────────────────────
+function initCheckout() {
+  loadProductData();
+  // Stripe is NOT initialized here — only when user proceeds to Step 2
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initCheckout);
+} else {
+  initCheckout();
+}
