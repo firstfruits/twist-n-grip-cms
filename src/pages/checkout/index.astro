@@ -11,737 +11,787 @@ const product = {
 
 const quantity = 1;
 const totalPrice = product.price * quantity;
+
+const stripePubKey = import.meta.env.STRIPE_PUBLISHABLE_KEY;
 ---
 
 <Layout>
-  <script
-    src="https://www.paypal.com/sdk/js?client-id=AbbTEBo-hqYTwvVYiMGnp5978rTHEO4Yah8554LV-0l9eMgII8JdsqrliMQU2B5NNdLCN_JQYvDcDbMr&currency=USD"
-    is:inline></script>
+  <script src="https://js.stripe.com/v3/" is:inline></script>
 
   <style>
-    /* Toast Styles */
+    /* ── Toast ── */
     #toast {
       visibility: hidden;
       min-width: 250px;
       margin-left: -125px;
-      background-color: #333;
+      background-color: #1e1b4b;
       color: #fff;
       text-align: center;
-      border-radius: 8px;
-      padding: 16px;
+      border-radius: 10px;
+      padding: 16px 24px;
       position: fixed;
       z-index: 1000;
       left: 50%;
       bottom: 30px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
       transition:
         visibility 0s,
-        opacity 0.5s linear;
+        opacity 0.4s ease;
       opacity: 0;
     }
-
     #toast.show {
       visibility: visible;
       opacity: 1;
     }
 
-    /* Overlay styles for disabled buttons */
-    #paypal-button-container.disabled {
+    /* ── Spinner ── */
+    .spinner {
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top: 3px solid #fff;
+      width: 20px;
+      height: 20px;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* ── Form processing overlay ── */
+    #checkout-form.processing {
       pointer-events: none;
-      opacity: 0.5;
-      filter: grayscale(1);
+      opacity: 0.65;
+    }
+
+    /* ── Step slider wrapper ── */
+    #steps-wrapper {
+      display: flex;
+      width: 200%; /* holds two panels side-by-side */
+      transition: transform 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    #steps-wrapper.step-2 {
+      transform: translateX(-50%);
+    }
+
+    /* Each step panel fills the visible area */
+    .step-panel {
+      width: 50%;
+      flex-shrink: 0;
+    }
+
+    /* ── Progress bar ── */
+    .progress-step {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: #9ca3af;
+      transition: color 0.3s;
+    }
+    .progress-step.active {
+      color: #1e1b4b;
+    }
+    .progress-step .step-dot {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid #d1d5db;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      transition:
+        border-color 0.3s,
+        background-color 0.3s,
+        color 0.3s;
+      flex-shrink: 0;
+    }
+    .progress-step.active .step-dot {
+      border-color: #d4183d;
+      background-color: #d4183d;
+      color: white;
+    }
+    .progress-step.done .step-dot {
+      border-color: #16a34a;
+      background-color: #16a34a;
+      color: white;
+    }
+    .progress-step.done {
+      color: #16a34a;
+    }
+    .progress-line {
+      flex: 1;
+      height: 2px;
+      background: #e5e7eb;
+      transition: background 0.3s;
+    }
+    .progress-line.done {
+      background: #16a34a;
+    }
+
+    /* ── Payment recap card ── */
+    #payment-recap {
+      background: linear-gradient(135deg, #1e1b4b 0%, #2d2a6e 100%);
+      color: white;
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    #payment-recap .recap-label {
+      font-size: 0.8rem;
+      opacity: 0.7;
+      margin-bottom: 2px;
+    }
+    #payment-recap .recap-value {
+      font-weight: 700;
+      font-size: 1rem;
+    }
+    #payment-recap .recap-total {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: #fbbf24;
+    }
+
+    /* ── Input focus ring ── */
+    .field-input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1.5px solid #e5e7eb;
+      border-radius: 10px;
+      outline: none;
+      font-size: 0.95rem;
+      transition:
+        border-color 0.2s,
+        box-shadow 0.2s;
+      background: #fafafa;
+    }
+    .field-input:focus {
+      border-color: #d4183d;
+      box-shadow: 0 0 0 3px rgba(212, 24, 61, 0.12);
+      background: white;
+    }
+
+    /* ── CTA buttons ── */
+    .btn-primary {
+      width: 100%;
+      background: #d4183d;
+      color: white;
+      padding: 15px 24px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 1rem;
+      cursor: pointer;
+      border: none;
+      transition:
+        background 0.2s,
+        transform 0.1s,
+        box-shadow 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      letter-spacing: 0.3px;
+    }
+    .btn-primary:hover {
+      background: #b31230;
+      box-shadow: 0 4px 16px rgba(212, 24, 61, 0.3);
+    }
+    .btn-primary:active {
+      transform: scale(0.98);
+    }
+    .btn-primary:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+    .btn-primary:disabled:hover {
+      background: #d4183d;
+      box-shadow: none;
+    }
+
+    .btn-pay {
+      width: 100%;
+      background: #1e1b4b;
+      color: white;
+      padding: 15px 24px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 1rem;
+      cursor: pointer;
+      border: none;
+      transition:
+        background 0.2s,
+        transform 0.1s,
+        box-shadow 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      letter-spacing: 0.3px;
+      margin-top: 20px;
+    }
+    .btn-pay:hover {
+      background: #111;
+      box-shadow: 0 4px 16px rgba(30, 27, 75, 0.35);
+    }
+    .btn-pay:active {
+      transform: scale(0.98);
+    }
+    .btn-pay:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+    .btn-pay:disabled:hover {
+      background: #1e1b4b;
+      box-shadow: none;
+    }
+
+    .btn-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: #6b7280;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: 0;
+      transition: color 0.2s;
+      margin-bottom: 24px;
+    }
+    .btn-back:hover {
+      color: #d4183d;
+    }
+
+    /* ── Qty controls ── */
+    .qty-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      border: 2px solid #e5e7eb;
+      background: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition:
+        border-color 0.2s,
+        color 0.2s;
+    }
+    .qty-btn:hover {
+      border-color: #d4183d;
+      color: #d4183d;
+    }
+    .qty-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .qty-btn:disabled:hover {
+      border-color: #e5e7eb;
+      color: inherit;
+    }
+
+    /* ── Card wrapper ── */
+    .card {
+      background: white;
+      border-radius: 16px;
+      box-shadow:
+        0 1px 4px rgba(0, 0, 0, 0.06),
+        0 4px 20px rgba(0, 0, 0, 0.06);
+      padding: 28px;
+    }
+
+    /* ── Secure badge ── */
+    .secure-badge {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      color: #9ca3af;
+      font-size: 0.75rem;
+      font-weight: 500;
+      margin-top: 14px;
+    }
+
+    /* ── Overflow clip on the viewport ── */
+    #checkout-slider-viewport {
+      overflow: hidden;
     }
   </style>
 
-  <div id="toast">Payment Successful! Order Placed.</div>
-  <div class="min-h-screen bg-gray-50">
+  <div
+    id="stripe-container"
+    data-pubkey={stripePubKey}
+    data-price={product.price}
+    data-title={product.name}
+    class="hidden"
+  >
+  </div>
+  <div id="toast">
+    <span>✓</span> Payment Successful! Order Placed.
+  </div>
+
+  <div
+    class="min-h-screen"
+    style="background: linear-gradient(135deg, #f8f9ff 0%, #f0f0f8 100%);"
+  >
     <!-- Header -->
-    <header class="bg-white border-b border-gray-200 sticky top-0 z-10">
-      <div class="max-w-7xl mx-auto px-4 py-4">
+    <header
+      class="bg-white border-b border-gray-100 sticky top-0 z-10"
+      style="box-shadow: 0 1px 8px rgba(0,0,0,0.06);"
+    >
+      <div
+        class="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between"
+      >
         <a
           href="/#products"
-          class="inline-flex items-center gap-2 text-gray-600 hover:text-[#d4183d] transition-colors"
+          class="inline-flex items-center gap-2 text-gray-500 hover:text-[#d4183d] transition-colors text-sm font-medium"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            width="20"
-            height="20"
+            width="18"
+            height="18"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
             stroke-width="2"
             stroke-linecap="round"
             stroke-linejoin="round"
-            class="w-5 h-5"
             ><path d="m12 19-7-7 7-7"></path><path d="M19 12H5"></path></svg
           >
-          <span>Back to Products</span>
+          Back to Products
         </a>
+
+        <!-- Progress indicator -->
+        <div class="flex items-center gap-2" id="progress-bar">
+          <div class="progress-step active" id="prog-step-1">
+            <div class="step-dot">1</div>
+            <span class="hidden sm:inline">Order Details</span>
+          </div>
+          <div class="progress-line" id="prog-line"></div>
+          <div class="progress-step" id="prog-step-2">
+            <div class="step-dot">2</div>
+            <span class="hidden sm:inline">Payment</span>
+          </div>
+        </div>
       </div>
     </header>
 
-    <div class="max-w-7xl mx-auto px-4 py-12">
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
-        <!-- Left Column - Product Summary -->
-        <div>
-          <h1 class="text-3xl mb-8 font-bold text-gray-900">Checkout</h1>
+    <div class="max-w-3xl mx-auto px-4 py-10">
+      <div id="checkout-slider-viewport">
+        <div id="steps-wrapper">
+          <!-- ══════════════════════════════════════════ -->
+          <!-- STEP 1: Order Summary + Shipping           -->
+          <!-- ══════════════════════════════════════════ -->
+          <div class="step-panel pr-0 sm:pr-4">
+            <h1 class="text-2xl font-bold text-gray-900 mb-6">Checkout</h1>
 
-          <!-- Product Card -->
-          <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
-            <h2 class="text-xl mb-6 font-semibold">Order Summary</h2>
-
-            <div class="flex gap-6 mb-6">
-              <div
-                class="w-32 h-32 shrink-0 bg-gray-100 rounded-lg flex items-center justify-center p-4"
+            <!-- Product card -->
+            <div class="card mb-5">
+              <h2
+                class="text-base font-semibold text-gray-500 uppercase tracking-wider mb-4"
               >
-                <img
-                  src={product.image}
-                  alt={product.name}
-                  class="w-full h-full object-contain"
-                />
+                Order Summary
+              </h2>
+              <div class="flex gap-5 mb-5">
+                <div
+                  class="w-28 h-28 shrink-0 bg-gray-100 rounded-xl flex items-center justify-center p-3"
+                >
+                  <img
+                    src={product.image}
+                    alt={product.name}
+                    class="w-full h-full object-contain"
+                  />
+                </div>
+                <div class="flex-1 min-w-0">
+                  <h3 class="text-lg font-semibold text-gray-900 mb-1">
+                    {product.name}
+                  </h3>
+                  <p class="text-sm text-gray-500 mb-3 leading-relaxed">
+                    {product.description}
+                  </p>
+                  <p class="text-xl font-bold text-gray-900">
+                    ${product.price.toFixed(2)}
+                  </p>
+                </div>
               </div>
 
-              <div class="flex-1">
-                <h3 class="text-lg mb-2 font-medium">{product.name}</h3>
-                <p class="text-gray-600 text-sm mb-4">
-                  {product.description}
-                </p>
-                <p class="text-2xl font-bold">${product.price.toFixed(2)}</p>
-              </div>
-            </div>
-
-            <!-- Quantity Controls -->
-            <div class="border-t border-gray-200 pt-6">
-              <div class="flex items-center justify-between mb-6">
-                <label class="text-base font-medium">Quantity</label>
-                <div class="flex items-center gap-3">
-                  <button
-                    id="decrease-qty"
-                    class="w-10 h-10 rounded-[6px] border-2 border-gray-300 hover:border-[#d4183d] hover:text-[#d4183d] transition-colors flex items-center justify-center cursor-pointer"
-                    aria-label="Decrease quantity"
+              <!-- Quantity + Total -->
+              <div class="border-t border-gray-100 pt-5">
+                <div class="flex items-center justify-between mb-4">
+                  <span class="text-sm font-medium text-gray-700">Quantity</span
                   >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      class="w-5 h-5"><path d="M5 12h14"></path></svg
+                  <div class="flex items-center gap-3">
+                    <button
+                      class="qty-btn"
+                      id="decrease-qty"
+                      aria-label="Decrease quantity"
                     >
-                  </button>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"><path d="M5 12h14"></path></svg
+                      >
+                    </button>
+                    <span
+                      id="quantity-display"
+                      class="text-xl font-bold w-10 text-center text-gray-900"
+                      >1</span
+                    >
+                    <button
+                      class="qty-btn"
+                      id="increase-qty"
+                      aria-label="Increase quantity"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        ><path d="M5 12h14"></path><path d="M12 5v14"
+                        ></path></svg
+                      >
+                    </button>
+                  </div>
+                </div>
+                <div
+                  class="flex items-center justify-between pt-4 border-t border-gray-100"
+                >
+                  <span class="font-semibold text-gray-700">Total</span>
                   <span
-                    id="quantity-display"
-                    class="text-xl w-12 text-center font-semibold">1</span
+                    id="total-price-display"
+                    class="text-2xl font-bold text-[#d4183d]"
+                    >${product.price.toFixed(2)}</span
                   >
-                  <button
-                    id="increase-qty"
-                    class="w-10 h-10 rounded-[6px] border-2 border-gray-300 hover:border-[#d4183d] hover:text-[#d4183d] transition-colors flex items-center justify-center cursor-pointer"
-                    aria-label="Increase quantity"
+                </div>
+              </div>
+            </div>
+
+            <!-- Shipping form -->
+            <div class="card">
+              <h2
+                class="text-base font-semibold text-gray-500 uppercase tracking-wider mb-5"
+              >
+                Shipping Information
+              </h2>
+
+              <form
+                class="space-y-4"
+                id="checkout-form"
+                name="checkout"
+                method="POST"
+                data-netlify="true"
+                netlify-honeypot="bot-field"
+              >
+                <input type="hidden" name="form-name" value="checkout" />
+                <input type="hidden" name="bot-field" />
+                <input
+                  type="hidden"
+                  name="stripe-transaction-id"
+                  id="stripe-tid"
+                />
+                <input
+                  type="hidden"
+                  name="stripe-status"
+                  id="stripe-status-input"
+                />
+                <input
+                  type="hidden"
+                  name="product-name"
+                  id="hidden-product-name"
+                />
+                <input
+                  type="hidden"
+                  name="product-qty"
+                  id="hidden-product-qty"
+                />
+                <input
+                  type="hidden"
+                  name="total-price"
+                  id="hidden-total-price"
+                />
+
+                <div>
+                  <label
+                    for="fullName"
+                    class="block text-sm font-medium text-gray-700 mb-1.5"
+                    >Full Name *</label
                   >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      class="w-5 h-5"
-                      ><path d="M5 12h14"></path><path d="M12 5v14"></path></svg
+                  <input
+                    type="text"
+                    id="fullName"
+                    name="fullName"
+                    required
+                    class="field-input"
+                    placeholder="John Doe"
+                  />
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label
+                      for="email"
+                      class="block text-sm font-medium text-gray-700 mb-1.5"
+                      >Email *</label
                     >
-                  </button>
+                    <input
+                      type="email"
+                      id="email"
+                      name="email"
+                      required
+                      class="field-input"
+                      placeholder="john@example.com"
+                    />
+                  </div>
+                  <div>
+                    <label
+                      for="phone"
+                      class="block text-sm font-medium text-gray-700 mb-1.5"
+                      >Phone *</label
+                    >
+                    <input
+                      type="tel"
+                      id="phone"
+                      name="phone"
+                      required
+                      class="field-input"
+                      placeholder="+1 (555) 000-0000"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label
+                    for="address"
+                    class="block text-sm font-medium text-gray-700 mb-1.5"
+                    >Street Address *</label
+                  >
+                  <textarea
+                    id="address"
+                    name="address"
+                    required
+                    rows="2"
+                    class="field-input resize-none"
+                    placeholder="123 Main Street, Apartment 4B"></textarea>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label
+                      for="city"
+                      class="block text-sm font-medium text-gray-700 mb-1.5"
+                      >City *</label
+                    >
+                    <input
+                      type="text"
+                      id="city"
+                      name="city"
+                      required
+                      class="field-input"
+                      placeholder="Auckland"
+                    />
+                  </div>
+                  <div>
+                    <label
+                      for="postalCode"
+                      class="block text-sm font-medium text-gray-700 mb-1.5"
+                      >Postal Code *</label
+                    >
+                    <input
+                      type="text"
+                      id="postalCode"
+                      name="postalCode"
+                      required
+                      class="field-input"
+                      placeholder="1010"
+                    />
+                  </div>
+                  <div>
+                    <label
+                      for="country"
+                      class="block text-sm font-medium text-gray-700 mb-1.5"
+                      >Country *</label
+                    >
+                    <input
+                      type="text"
+                      id="country"
+                      name="country"
+                      required
+                      class="field-input"
+                      placeholder="New Zealand"
+                    />
+                  </div>
+                </div>
+              </form>
+            </div>
+
+            <!-- Proceed CTA -->
+            <div class="mt-5">
+              <button class="btn-primary" id="proceed-to-payment">
+                Proceed to Payment
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  ><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"
+                  ></path></svg
+                >
+              </button>
+              <p class="text-center text-xs text-gray-400 mt-3">
+                You'll review your payment on the next step before being
+                charged.
+              </p>
+            </div>
+          </div>
+
+          <!-- ══════════════════════════════════════════ -->
+          <!-- STEP 2: Payment                           -->
+          <!-- ══════════════════════════════════════════ -->
+          <div class="step-panel pl-0 sm:pl-4">
+            <!-- Back button -->
+            <button class="btn-back" id="back-to-step1">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                ><path d="m12 19-7-7 7-7"></path><path d="M19 12H5"></path></svg
+              >
+              Back to Order Details
+            </button>
+
+            <!-- Order recap -->
+            <div id="payment-recap">
+              <div>
+                <p class="recap-label">Product</p>
+                <p class="recap-value" id="recap-name">{product.name}</p>
+              </div>
+              <div style="text-align:center;">
+                <p class="recap-label">Qty</p>
+                <p class="recap-value" id="recap-qty">1</p>
+              </div>
+              <div style="text-align:right;">
+                <p class="recap-label">Total Due</p>
+                <p class="recap-total" id="recap-total">$0.00</p>
+              </div>
+            </div>
+
+            <!-- Stripe payment card -->
+            <div class="card">
+              <h2
+                class="text-base font-semibold text-gray-500 uppercase tracking-wider mb-5"
+              >
+                Secure Payment
+              </h2>
+
+              <!-- Loading skeleton while Stripe initializes -->
+              <div id="payment-loading" class="space-y-3 mb-4">
+                <div
+                  style="height:52px; background:#f3f4f6; border-radius:10px; animation: pulse 1.5s ease-in-out infinite;"
+                >
+                </div>
+                <div
+                  style="height:52px; background:#f3f4f6; border-radius:10px; animation: pulse 1.5s ease-in-out infinite; animation-delay:0.15s;"
+                >
+                </div>
+                <div
+                  style="height:52px; background:#f3f4f6; border-radius:10px; animation: pulse 1.5s ease-in-out infinite; animation-delay:0.3s;"
+                >
                 </div>
               </div>
 
-              <!-- Total -->
+              <div id="payment-element" class="hidden">
+                <!--Stripe.js injects the Payment Element here-->
+              </div>
+
               <div
-                class="flex items-center justify-between text-2xl pt-6 border-t border-gray-200"
+                id="payment-message"
+                class="hidden mt-3 text-sm text-red-600 bg-red-50 p-3 rounded-lg text-center"
               >
-                <span class="font-medium">Total</span>
-                <span id="total-price-display" class="text-[#d4183d] font-bold">
-                  $0.00
-                </span>
+              </div>
+
+              <button class="btn-pay" id="submit" type="button" disabled>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  ><rect x="3" y="11" width="18" height="11" rx="2" ry="2"
+                  ></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg
+                >
+                <span id="button-text">Pay Now</span>
+                <div class="spinner hidden" id="spinner"></div>
+              </button>
+
+              <div class="secure-badge">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="13"
+                  height="13"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  ><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"
+                  ></path></svg
+                >
+                Payments are secure and encrypted via Stripe
               </div>
             </div>
           </div>
-        </div>
-
-        <!-- Right Column - Checkout Form -->
-        <div>
-          <div class="bg-white rounded-lg shadow-sm p-6">
-            <h2 class="text-xl mb-6 font-semibold">Shipping Information</h2>
-
-            <form
-              class="space-y-5"
-              id="checkout-form"
-              name="checkout"
-              method="POST"
-              data-netlify="true"
-              netlify-honeypot="bot-field"
-            >
-              <input type="hidden" name="form-name" value="checkout" />
-              <input type="hidden" name="bot-field" />
-              <input
-                type="hidden"
-                name="paypal-transaction-id"
-                id="paypal-tid"
-              />
-              <input
-                type="hidden"
-                name="paypal-status"
-                id="paypal-status-input"
-              />
-              <input
-                type="hidden"
-                name="product-name"
-                id="hidden-product-name"
-              />
-              <input type="hidden" name="product-qty" id="hidden-product-qty" />
-              <input type="hidden" name="total-price" id="hidden-total-price" />
-
-              <div>
-                <label
-                  for="fullName"
-                  class="block text-sm mb-2 text-gray-700 font-medium"
-                >
-                  Full Name *
-                </label>
-                <input
-                  type="text"
-                  id="fullName"
-                  name="fullName"
-                  required
-                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d4183d] focus:border-transparent transition-all"
-                  placeholder="John Doe"
-                />
-              </div>
-
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div>
-                  <label
-                    for="email"
-                    class="block text-sm mb-2 text-gray-700 font-medium"
-                  >
-                    Email *
-                  </label>
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    required
-                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d4183d] focus:border-transparent transition-all"
-                    placeholder="john@example.com"
-                  />
-                </div>
-
-                <div>
-                  <label
-                    for="phone"
-                    class="block text-sm mb-2 text-gray-700 font-medium"
-                  >
-                    Phone *
-                  </label>
-                  <input
-                    type="tel"
-                    id="phone"
-                    name="phone"
-                    required
-                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d4183d] focus:border-transparent transition-all"
-                    placeholder="+1 (555) 000-0000"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label
-                  for="address"
-                  class="block text-sm mb-2 text-gray-700 font-medium"
-                >
-                  Street Address *
-                </label>
-                <textarea
-                  id="address"
-                  name="address"
-                  required
-                  rows="3"
-                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d4183d] focus:border-transparent resize-none transition-all"
-                  placeholder="123 Main Street, Apartment 4B"></textarea>
-              </div>
-
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-                <div>
-                  <label
-                    for="city"
-                    class="block text-sm mb-2 text-gray-700 font-medium"
-                  >
-                    City *
-                  </label>
-                  <input
-                    type="text"
-                    id="city"
-                    name="city"
-                    required
-                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d4183d] focus:border-transparent transition-all"
-                    placeholder="Auckland"
-                  />
-                </div>
-
-                <div>
-                  <label
-                    for="postalCode"
-                    class="block text-sm mb-2 text-gray-700 font-medium"
-                  >
-                    Postal Code *
-                  </label>
-                  <input
-                    type="text"
-                    id="postalCode"
-                    name="postalCode"
-                    required
-                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d4183d] focus:border-transparent transition-all"
-                    placeholder="1010"
-                  />
-                </div>
-
-                <div>
-                  <label
-                    for="country"
-                    class="block text-sm mb-2 text-gray-700 font-medium"
-                  >
-                    Country *
-                  </label>
-                  <input
-                    type="text"
-                    id="country"
-                    name="country"
-                    required
-                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#d4183d] focus:border-transparent transition-all"
-                    placeholder="New Zealand"
-                  />
-                </div>
-              </div>
-
-              <!-- PayPal Button -->
-              <div class="pt-6">
-                <div id="paypal-button-container"></div>
-                <p class="text-center text-sm text-gray-500 mt-3">
-                  Secure payment processing via PayPal
-                </p>
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+        </div><!-- /steps-wrapper -->
+      </div><!-- /checkout-slider-viewport -->
+    </div><!-- /container -->
+  </div><!-- /min-h-screen -->
 </Layout>
 
-<script is:inline>
-  const quantityDisplay = document.getElementById("quantity-display");
-  const totalPriceDisplay = document.getElementById("total-price-display");
-  const decreaseBtn = document.getElementById("decrease-qty");
-  const increaseBtn = document.getElementById("increase-qty");
-  const checkoutForm = document.getElementById("checkout-form");
-
-  // Selection elements
-  const productNameEl = document.querySelector("h3.text-lg.font-medium");
-  const productDescEl = document.querySelector("p.text-gray-600.text-sm");
-  const productPriceEl = document.querySelector("p.text-2xl.font-bold");
-  const productImageEl = document.querySelector("img.object-contain");
-
-  let productData = null;
-  let currentQuantity = 1;
-
-  function loadProductData() {
-    const storedData = localStorage.getItem("checkout_product");
-    if (storedData) {
-      productData = JSON.parse(storedData);
-      currentQuantity = productData.quantity || 1;
-
-      // Update UI with stored data
-      if (productNameEl) productNameEl.textContent = productData.title;
-      if (productDescEl) productDescEl.textContent = productData.description;
-      if (productPriceEl)
-        productPriceEl.textContent = `$${parseFloat(productData.price).toFixed(2)}`;
-      if (productImageEl) {
-        productImageEl.src = productData.image;
-        productImageEl.alt = productData.title;
-      }
-
-      updateDisplay();
-    } else {
-      console.warn("No product data found in localStorage");
+<style>
+  @keyframes pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.45;
     }
   }
+</style>
 
-  function updateDisplay() {
-    if (!productData) return;
-
-    if (quantityDisplay) quantityDisplay.textContent = currentQuantity;
-    if (totalPriceDisplay) {
-      const price = parseFloat(productData.price);
-      const total = (currentQuantity * price).toFixed(2);
-      totalPriceDisplay.textContent = `$${total}`;
-
-      // Update hidden form fields
-      const hiddenName = document.getElementById("hidden-product-name");
-      const hiddenQty = document.getElementById("hidden-product-qty");
-      const hiddenTotal = document.getElementById("hidden-total-price");
-      if (hiddenName) hiddenName.value = productData.title;
-      if (hiddenQty) hiddenQty.value = currentQuantity;
-      if (hiddenTotal) hiddenTotal.value = total;
-    }
-
-    // Sync back to localStorage
-    productData.quantity = currentQuantity;
-    localStorage.setItem("checkout_product", JSON.stringify(productData));
-  }
-
-  // Form Validation Logic
-  function checkFormValidity() {
-    const isValid = checkoutForm.checkValidity();
-    const paypalContainer = document.getElementById("paypal-button-container");
-    if (paypalContainer) {
-      if (isValid) {
-        paypalContainer.classList.remove("disabled");
-      } else {
-        paypalContainer.classList.add("disabled");
-      }
-    }
-    return isValid;
-  }
-
-  checkoutForm?.addEventListener("input", checkFormValidity);
-
-  function showToast() {
-    const toast = document.getElementById("toast");
-    if (toast) {
-      toast.classList.add("show");
-      setTimeout(() => {
-        toast.classList.remove("show");
-      }, 3000);
-    }
-  }
-
-  async function submitToNetlify(orderData) {
-    const formData = new FormData(checkoutForm);
-    // Ensure the hidden fields are synced (they should be, but let's be safe)
-    formData.set("paypal-transaction-id", orderData.id);
-    formData.set("paypal-status", orderData.status);
-    formData.set("form-name", "checkout");
-
-    try {
-      const response = await fetch(window.location.pathname, {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams(formData).toString(),
-      });
-
-      if (response.ok) {
-        console.log("Form successfully submitted to Netlify");
-      } else {
-        console.error(
-          "Netlify submission failed with status:",
-          response.status,
-        );
-      }
-    } catch (error) {
-      console.error("Netlify submission error:", error);
-    }
-  }
-
-  decreaseBtn?.addEventListener("click", (e) => {
-    e.preventDefault();
-    if (currentQuantity > 1) {
-      currentQuantity--;
-      updateDisplay();
-    }
-  });
-
-  increaseBtn?.addEventListener("click", (e) => {
-    e.preventDefault();
-    currentQuantity++;
-    updateDisplay();
-  });
-
-  checkoutForm?.addEventListener("submit", (e) => {
-    e.preventDefault();
-  });
-
-  function initPayPal() {
-    if (!window.paypal) {
-      console.error("PayPal SDK not loaded");
-      return;
-    }
-
-    const paypalContainer = document.getElementById("paypal-button-container");
-    if (!paypalContainer) return;
-
-    // Clear previous button if any
-    paypalContainer.innerHTML = "";
-
-    window.paypal
-      .Buttons({
-        onClick: function (data, actions) {
-          if (!checkFormValidity()) {
-            alert("Please fill in all required shipping information first.");
-            return actions.reject();
-          }
-          return actions.resolve();
-        },
-        createOrder: function (data, actions) {
-          if (!productData) {
-            alert("Please select a product first");
-            return;
-          }
-
-          const total = (
-            currentQuantity * parseFloat(productData.price)
-          ).toFixed(2);
-
-          return actions.order.create({
-            purchase_units: [
-              {
-                amount: {
-                  value: total,
-                  currency_code: "USD",
-                },
-                description: `${productData.title} (Qty: ${currentQuantity})`,
-              },
-            ],
-          });
-        },
-        onApprove: function (data, actions) {
-          return actions.order.capture().then(async function (orderData) {
-            console.log("Capture result", orderData);
-
-            // Submit to Netlify
-            await submitToNetlify(orderData);
-
-            // Show Toast
-            showToast();
-
-            // Redirect to home after delay
-            setTimeout(() => {
-              window.location.href = "/";
-            }, 2000);
-          });
-        },
-        onError: function (err) {
-          console.error("PayPal Error:", err);
-          alert("An error occurred with PayPal. Please try again.");
-        },
-      })
-      .render("#paypal-button-container");
-
-    // Initial check
-    checkFormValidity();
-  }
-
-  // Initial load
-  loadProductData();
-
-  // Initialize PayPal when SDK is ready
-  if (window.paypal) {
-    initPayPal();
-  } else {
-    document.addEventListener("DOMContentLoaded", initPayPal);
-    setTimeout(() => {
-      if (window.paypal) initPayPal();
-    }, 1000);
-  }
-</script>
-
-<!-- Business
-Email: sb-flhwz49004060@business.example.com
-Password: 2xG*%$d(
-Client ID: AZGr8Sv1vthle1HyaWTTjkEfiVh6I6nfyQWi2uiVYUhPycOJLj_zRUFxrvcMqiY5pQ6eh9oOxsAjvts3
-Client Secret: EGdqFnpup8npcO87G0y_vh5ObTpGQg-dpjrHhpJbuBAGUE_6yJ49-cZ82_knF3-p6arbK3-QAd8Tvs_c
-
-Personal:
-Email: sb-gv07y48971586@personal.example.com
-Password: -q_;Tn1#
-
-API & Credentials
-Client ID: AZGr8Sv1vthle1HyaWTTjkEfiVh6I6nfyQWi2uiVYUhPycOJLj_zRUFxrvcMqiY5pQ6eh9oOxsAjvts3
-Client Secret: EGdqFnpup8npcO87G0y_vh5ObTpGQg-dpjrHhpJbuBAGUE_6yJ49-cZ82_knF3-p6arbK3-QAd8Tvs_c -->
-
-<!-- 
-Response:
-Capture result 
-Object { id: "10F76244FN9341034", intent: "CAPTURE", status: "COMPLETED", purchase_units: (1) […], payer: {…}, create_time: "2026-01-23T22:00:07Z", update_time: "2026-01-23T22:00:54Z", links: (1) […] }
-​
-create_time: "2026-01-23T22:00:07Z"
-​
-id: "10F76244FN9341034"
-​
-intent: "CAPTURE"
-​
-links: Array [ {…} ]
-​
-payer: Object { name: {…}, email_address: "sb-gv07y48971586@personal.example.com", payer_id: "EE4ZHR5WQ7YTJ", … }
-​
-purchase_units: Array [ {…} ]
-​
-status: "COMPLETED"
-​
-update_time: "2026-01-23T22:00:54Z"
-​
-<prototype>: Object { … }
- {
-  "id": "10F76244FN9341034",
-  "intent": "CAPTURE",
-  "status": "COMPLETED",
-  "purchase_units": [
-    {
-      "reference_id": "default",
-      "amount": {
-        "currency_code": "USD",
-        "value": "28.00"
-      },
-      "payee": {
-        "email_address": "sb-flhwz49004060@business.example.com",
-        "merchant_id": "R2DRHTMNW87CY"
-      },
-      "description": "RD Fee - $4.00 Add On Fee for Rural Deliveries (Qty: 7)",
-      "shipping": {
-        "name": {
-          "full_name": "John Doe"
-        },
-        "address": {
-          "address_line_1": "2211 N First St",
-          "admin_area_2": "San Jose",
-          "admin_area_1": "CA",
-          "postal_code": "95131",
-          "country_code": "US"
-        }
-      },
-      "payments": {
-        "captures": [
-          {
-            "id": "3GH98806SU5533701",
-            "status": "COMPLETED",
-            "amount": {
-              "currency_code": "USD",
-              "value": "28.00"
-            },
-            "final_capture": true,
-            "seller_protection": {
-              "status": "ELIGIBLE",
-              "dispute_categories": [
-                "ITEM_NOT_RECEIVED",
-                "UNAUTHORIZED_TRANSACTION"
-              ]
-            },
-            "create_time": "2026-01-23T22:00:54Z",
-            "update_time": "2026-01-23T22:00:54Z"
-          }
-        ]
-      }
-    }
-  ],
-  "payer": {
-    "name": {
-      "given_name": "John",
-      "surname": "Doe"
-    },
-    "email_address": "sb-gv07y48971586@personal.example.com",
-    "payer_id": "EE4ZHR5WQ7YTJ",
-    "address": {
-      "country_code": "US"
-    }
-  },
-  "create_time": "2026-01-23T22:00:07Z",
-  "update_time": "2026-01-23T22:00:54Z",
-  "links": [
-    {
-      "href": "https://api.sandbox.paypal.com/v2/checkout/orders/10F76244FN9341034",
-      "rel": "self",
-      "method": "GET"
-    }
-  ]
-} checkout:1397:21
-
-
-
-Normal:
-{
-  "id": "10F76244FN9341034",
-  "intent": "CAPTURE",
-  "status": "COMPLETED",
-  "purchase_units": [
-    {
-      "reference_id": "default",
-      "amount": {
-        "currency_code": "USD",
-        "value": "28.00"
-      },
-      "payee": {
-        "email_address": "sb-flhwz49004060@business.example.com",
-        "merchant_id": "R2DRHTMNW87CY"
-      },
-      "description": "RD Fee - $4.00 Add On Fee for Rural Deliveries (Qty: 7)",
-      "shipping": {
-        "name": {
-          "full_name": "John Doe"
-        },
-        "address": {
-          "address_line_1": "2211 N First St",
-          "admin_area_2": "San Jose",
-          "admin_area_1": "CA",
-          "postal_code": "95131",
-          "country_code": "US"
-        }
-      },
-      "payments": {
-        "captures": [
-          {
-            "id": "3GH98806SU5533701",
-            "status": "COMPLETED",
-            "amount": {
-              "currency_code": "USD",
-              "value": "28.00"
-            },
-            "final_capture": true,
-            "seller_protection": {
-              "status": "ELIGIBLE",
-              "dispute_categories": [
-                "ITEM_NOT_RECEIVED",
-                "UNAUTHORIZED_TRANSACTION"
-              ]
-            },
-            "create_time": "2026-01-23T22:00:54Z",
-            "update_time": "2026-01-23T22:00:54Z"
-          }
-        ]
-      }
-    }
-  ],
-  "payer": {
-    "name": {
-      "given_name": "John",
-      "surname": "Doe"
-    },
-    "email_address": "sb-gv07y48971586@personal.example.com",
-    "payer_id": "EE4ZHR5WQ7YTJ",
-    "address": {
-      "country_code": "US"
-    }
-  },
-  "create_time": "2026-01-23T22:00:07Z",
-  "update_time": "2026-01-23T22:00:54Z",
-  "links": [
-    {
-      "href": "https://api.sandbox.paypal.com/v2/checkout/orders/10F76244FN9341034",
-      "rel": "self",
-      "method": "GET"
-    }
-  ]
-}
- -->
+<script src="./checkout.js"></script>
