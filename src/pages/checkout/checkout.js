@@ -261,18 +261,33 @@ submitBtn?.addEventListener("click", async (e) => {
   });
 
   if (error) {
-    showMessage(
+    const errorMsg =
       error.type === "card_error" || error.type === "validation_error"
         ? error.message
-        : "An unexpected error occurred."
-    );
+        : "An unexpected error occurred. Please try again.";
+
+    // Redirect to failure page
+    const params = new URLSearchParams({ status: "failed", error: errorMsg });
+    window.location.href = `/order-status?${params.toString()}`;
     setLoading(false);
   } else if (paymentIntent?.status === "succeeded") {
     showMessage("");
     await submitToNetlify(paymentIntent.id, paymentIntent.status);
-    showToast();
+
+    // Build redirect URL with order details
+    const price = parseFloat(productData?.price || 0);
+    const total = (currentQuantity * price).toFixed(2);
+    const params = new URLSearchParams({
+      status:  "success",
+      product: productData?.title || "",
+      qty:     currentQuantity,
+      total:   total,
+      txn:     paymentIntent.id,
+    });
+
     localStorage.removeItem("checkout_product");
-    setTimeout(() => { window.location.href = "/"; }, 2500);
+    window.location.href = `/order-status?${params.toString()}`;
+
   } else {
     showMessage("Payment is processing or requires additional action.");
     setLoading(false);
