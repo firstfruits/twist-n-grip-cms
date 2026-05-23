@@ -68,9 +68,9 @@ products:
     price: "3.55"
     image: /Tote-Bag-Product-Image.webp
   - id: 4
-    title: RD Fee - $4.00 Add On Fee for Rural Deliveries
+    title: RD Fee - $7.50 Add On Fee for Rural Deliveries
     description: Additional fee required for rural delivery addresses
-    price: "4.00"
+    price: "7.50"
     image: /Rural-Delivery-Product-Image.webp
 contact:
   title: Get in Touch
