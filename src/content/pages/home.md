@@ -51,29 +51,8 @@ features:
     reverse: false
     imageAlt: New Zealand Flag and Heart Graphic
     image: /images/designed-in-new-zealand.webp
-products:
-  - id: 1
-    title: One Twist n Grip Tough Screw In Tent Peg (Earth Screw)
-    description: Single tough, non-corrosive tent peg that screws easily into the ground
-    price: "2.50"
-    image: /peg-product-image.webp
-  - id: 2
-    title: One Hand Tool for Tough Screw In Tent Pegs
-    description: Specially designed hand tool for easy installation of earth screw pegs
-    price: "3.00"
-    image: /Hand-Tool-Product-Image.webp
-  - id: 3
-    title: One Tote Bag, holds six tough screw in tent Pegs and a Hand Tool
-    description: Lightweight drawstring tote bag made in NZ, holds up to 6 pegs and
-      hand tool
-    price: "1.75"
-    image: /Tote-Bag-Product-Image.webp
-  - id: 4
-    title: RD Fee - $7.50 Add On Fee for Rural Deliveries
-    description: Additional fee required for rural delivery addresses
-    price: "7.50"
-    image: /Rural-Delivery-Product-Image.webp
+products: []
 contact:
   title: Get in Touch
-  description: We'd love to hear from you. Send us a message below.
+  description: We'd love to hear from you. Send us a message - twistngrippeg@gmail.com
 ---
