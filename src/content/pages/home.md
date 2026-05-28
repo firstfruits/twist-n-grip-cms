@@ -10,30 +10,31 @@ hero:
 features:
   - title: About the EarthScrew Peg
     content: >-
-      The ***EarthScrew** **peg*** is a non-corrosive, tough, super strong and
-      easy to use screw in tent peg with many uses. As tent pegs for camping and
-      other outdoor activities. You can use them in the garden or on the sports
-      field or worksite to hold down the guy ropes of awnings and other
-      coverings. Designed to simply screw into the earth using the hand tool or
-      a 3/8″ drive adaptor in a wrench or battery drill. So simple, no more
-      hammering and ending up with bent or broken pegs!
+      The *Twist-n-Grip peg* works like a regular screw which is why we nickname
+      it an Earth-Screw, It is simply screwed in and out of the earth giving you
+      a good secure anchorage point. Use it to hold down tents, bivouacs, shade
+      coverings, awnings, canopies and gazebos. Tie down the trampoline,
+      furniture, pet cage and so many other items in the yard. In the garden,
+      use it for young shrub tie downs, secure growing tunnels or pinning weed
+      mat and soil erosion materials it has so many uses. \
 
+      Removal is as easy as insertion, just unscrew it, no more pulling and straining required, simple and easy. \
 
-      *The Twist-n-Grip peg works like a regular screw which is why we nickname it an EarthScrew! It is simply screwed in and out of the earth giving you a good secure anchorage point. Use it to hold down tents, bivouacs, shade coverings, awnings, canopies or gazebos. Tie down the trampoline, furniture, pet cage and so many other items. In the garden, use it for young shrub tie downs, secure growing tunnels or pinning weed mat and soil erosion materials it has so many uses. Removal is as easy as insertion, just unscrew it, no more pulling and straining required, simple and easy.*
+      The **\*Earth-Screw** **peg*** is a non-corrosive, tough, super strong and easy to use earth-screw peg. Designed to simply screw into the earth using the hand tool or a 3/8″ drive adaptor in a wrench or battery drill. So simple, no more hammering and ending up with bent or broken pegs!
     image: /images/about-peg.webp
     imageAlt: Twist n Grip Earth Screws with Hand Tool and Tote Bag
     reverse: false
   - title: Designed in New Zealand
-    content: >
+    content: >-
       The head of these tough, heavy duty earth screws (Made in New Zealand Tent
       Pegs) are designed for a 4mm guy rope to be easily clipped into place for
-      a secure fastening. They can be easily removed without heavy pulling and,
+      a secure fastening. They can be easily removed without heavy pulling. And,
       when required, the peg can be left permanently in place as they won't
       corrode like steel tent pegs. The guy rope is set closer to the pole or
       side of tent thus reducing any trip hazard.
 
 
-      These heavy duty screw in pegs are designed to be easy to use, screw in and has less ground disturbance on withdrawal. Wind resistance is 35kg making it a stronger anchoring peg than the equivalent 'knock in' peg. Tote bags, also made in NZ are available, each tote bag can hold up to six screw in pegs and a NZ made hand tool to make a tent peg set. Tote bags work with a drawstring and are lightweight unlike leather tote bags.
+      These heavy-duty screw in pegs are designed for easy use; screw in with less ground disturbance on withdrawal. Wind resistance is 35kg making it a stronger anchoring peg than the equivalent 'knock in' peg. Tote bags, also made in NZ are available, each tote bag can hold up to six pegs, and a NZ made hand tool, to make a tent peg set. Tote bags work with a drawstring and are lightweight unlike leather tote bags.
     image: /images/peg-product-image.webp
     imageAlt: Twist n Grip Earth Screw Peg
     reverse: true
@@ -54,18 +55,18 @@ products:
   - id: 1
     title: One Twist n Grip Tough Screw In Tent Peg (Earth Screw)
     description: Single tough, non-corrosive tent peg that screws easily into the ground
-    price: "4.50"
+    price: "2.50"
     image: /peg-product-image.webp
   - id: 2
     title: One Hand Tool for Tough Screw In Tent Pegs
     description: Specially designed hand tool for easy installation of earth screw pegs
-    price: "4.95"
+    price: "3.00"
     image: /Hand-Tool-Product-Image.webp
   - id: 3
     title: One Tote Bag, holds six tough screw in tent Pegs and a Hand Tool
     description: Lightweight drawstring tote bag made in NZ, holds up to 6 pegs and
       hand tool
-    price: "3.55"
+    price: "1.75"
     image: /Tote-Bag-Product-Image.webp
   - id: 4
     title: RD Fee - $7.50 Add On Fee for Rural Deliveries
