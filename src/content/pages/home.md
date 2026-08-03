@@ -56,18 +56,22 @@ products:
     description: Single tough, non-corrosive tent peg that screws easily into the ground
     price: $4.50
     image: /images/peg-product-image.webp
+    id: 1
   - title: One Hand Tool for Tough Screw In Tent Pegs
     description: Specially designed hand tool for easy installation of earth screw pegs
     price: "4.95"
     image: /images/about-peg.webp
+    id: 2
   - title: One Tote Bag, holds six tough screw in tent Pegs and a Hand Tool
     description: Lightweight drawstring tote bag made in NZ, holds up to 6 pegs and
       hand tool
     price: "3.55"
+    id: 3
   - title: RD Fee - $7.50 Add On Fee for Rural Deliveries
     description: Additional fee required for rural delivery addresses
     price: "7.50"
     image: /images/designed-in-new-zealand.webp
+    id: 4
 contact:
   title: Get in Touch
   description: We'd love to hear from you. Send us a message - twistngrippeg@gmail.com
