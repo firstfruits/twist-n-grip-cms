@@ -51,7 +51,11 @@ features:
     reverse: false
     imageAlt: New Zealand Flag and Heart Graphic
     image: /images/designed-in-new-zealand.webp
-products: []
+products:
+  - title: One Twist n Grip Tough Screw In Tent Peg (Earth Screw)
+    description: Single tough, non-corrosive tent peg that screws easily into the ground
+    price: $4.50
+    image: /images/peg-product-image.webp
 contact:
   title: Get in Touch
   description: We'd love to hear from you. Send us a message - twistngrippeg@gmail.com
