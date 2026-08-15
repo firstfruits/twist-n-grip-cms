@@ -2,13 +2,24 @@ import type { APIRoute } from "astro";
 import Stripe from "stripe";
 
 // Initialize Stripe. Use your STRIPE_SECRET_KEY from .env
-const stripe = new Stripe(
-  import.meta.env.STRIPE_SECRET_KEY || "sk_test_placeholder",
-);
+const STRIPE_SECRET_KEY = import.meta.env.STRIPE_SECRET_KEY;
 
 export const prerender = false;
 
 export const POST: APIRoute = async ({ request }) => {
+  // Guard: fail fast with a clear message if the Stripe key is not configured
+  if (!STRIPE_SECRET_KEY || STRIPE_SECRET_KEY === "sk_test_placeholder") {
+    console.error("[Stripe] STRIPE_SECRET_KEY is not configured.");
+    return new Response(
+      JSON.stringify({
+        error: "Payment service is not configured. Please contact support.",
+      }),
+      { status: 503, headers: { "Content-Type": "application/json" } },
+    );
+  }
+
+  const stripe = new Stripe(STRIPE_SECRET_KEY);
+
   try {
     const body = await request.json();
     // Extract optional intentId

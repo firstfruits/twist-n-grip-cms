@@ -2,7 +2,19 @@
 import { getEntry } from "astro:content";
 
 const footerEntry = await getEntry("settings", "footer");
-const { brand, contact, information, copyright } = footerEntry.data;
+
+if (!footerEntry) {
+  console.error(
+    "[Footer] Could not load settings/footer — using fallback data.",
+  );
+}
+
+const { brand, contact, information, copyright } = footerEntry?.data ?? {
+  brand: { title: "Twist-n-Grip", description: "" },
+  contact: { phone: "", email: "" },
+  information: [],
+  copyright: `Copyright © ${new Date().getFullYear()} Twist-n-Grip Peg. All rights reserved.`,
+};
 ---
 
 <footer class="bg-[#111629] text-gray-300 py-12">

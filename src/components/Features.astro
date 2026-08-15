@@ -44,7 +44,7 @@ const { features } = Astro.props;
             </h2>
             <div
               class=" text-gray-600 text-[16px] lg:text-sm leading-[24px] text-justify md:text-left font-normal prose max-w-none"
-              set:html={marked.parse(feature.content)}
+              set:html={String(marked.parse(feature.content))}
             />
           </div>
         </div>
