@@ -52,7 +52,7 @@ features:
     imageAlt: New Zealand Flag and Heart Graphic
     image: /images/designed-in-new-zealand.webp
 products:
-  - title: Product 1
+  - title: "Test: The deploy error solved."
     description: Single tough, non-corrosive tent peg that screws easily into the ground
     price: "4.50"
     image: /images/peg-product-image.webp
@@ -63,8 +63,7 @@ products:
     image: /images/about-peg.webp
     id: 2
   - title: One Tote Bag, holds six tough screw in tent Pegs and a Hand Tool
-    description:
-      Lightweight drawstring tote bag made in NZ, holds up to 6 pegs and
+    description: Lightweight drawstring tote bag made in NZ, holds up to 6 pegs and
       hand tool
     price: "3.55"
     image: /images/peg-product-image.webp
