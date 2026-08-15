@@ -66,7 +66,7 @@ products:
     description: Lightweight drawstring tote bag made in NZ, holds up to 6 pegs and
       hand tool
     price: "3.55"
-    image: /images/peg-product-image.webp
+    image: /images/tote-bag-product-image.webp
     id: 3
   - title: RD Fee - $7.50 Add On Fee for Rural Deliveries
     description: Additional fee required for rural delivery addresses
